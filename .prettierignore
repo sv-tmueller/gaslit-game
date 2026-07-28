@@ -1,0 +1,11 @@
+dist
+node_modules
+package-lock.json
+
+# not owned by this package; other in-flight branches manage these files
+README.md
+LICENSE
+ASSETS-LICENSE
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
