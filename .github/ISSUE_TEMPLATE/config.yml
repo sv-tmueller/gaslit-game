@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the contributing guide first
+    url: https://github.com/sv-tmueller/gaslit-game/blob/main/CONTRIBUTING.md
+    about: How work is organized, and why roadmap issues are not ready to pick up.
+  - name: Check the roadmap before filing
+    url: https://github.com/sv-tmueller/gaslit-game/issues?q=is%3Aissue+is%3Aopen+label%3Aroadmap
+    about: Around 50 planned items are already tracked as placeholders, not ready to implement as written.
+  - name: Report a security vulnerability
+    url: https://github.com/sv-tmueller/gaslit-game/blob/main/SECURITY.md
+    about: Do not open a public issue for a security report; see this file for the private reporting route.
