@@ -63,6 +63,17 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
 
 /** A single stored (uncompressed) deflate block wrapped in a minimal zlib stream. */
 function storedZlibStream(raw: Uint8Array): Uint8Array {
+  // A stored block's LEN/NLEN fields are 16 bits, capping a single block at 65535 bytes.
+  // Past that, LEN truncates silently while NLEN stays self-consistent with the truncated
+  // LEN, so the corrupt stream would pass an inflate sanity check instead of erroring.
+  // Multi-block emission is the general fix; this package's images stay well under the
+  // cap, so fail loudly instead.
+  if (raw.length > 0xffff) {
+    throw new Error(
+      `storedZlibStream: raw length ${raw.length} exceeds the 65535-byte (0xffff) limit of a single stored deflate block`,
+    );
+  }
+
   // zlib header: CMF/FLG chosen so (CMF*256+FLG) % 31 === 0, CM=8 (deflate), CINFO=7 (32K window).
   const zlibHeader = new Uint8Array([0x78, 0x01]);
 
@@ -111,6 +122,21 @@ export interface EncodeIndexedPngOptions {
  */
 export function encodeIndexedPng(options: EncodeIndexedPngOptions): Uint8Array {
   const { width, height, indices, palette } = options;
+
+  // Bit depth 4 gives 16 possible palette entries (0-15); above that, `index & 0x0f`
+  // below would truncate silently instead of erroring.
+  if (palette.length > 16) {
+    throw new Error(
+      `encodeIndexedPng: palette has ${palette.length} entries, the max for a 4-bit indexed PNG is 16`,
+    );
+  }
+  for (const index of indices) {
+    if (index > 15) {
+      throw new Error(
+        `encodeIndexedPng: index ${index} exceeds 15, the max for a 4-bit indexed PNG`,
+      );
+    }
+  }
 
   const ihdrData = new Uint8Array(13);
   const ihdrView = new DataView(ihdrData.buffer);

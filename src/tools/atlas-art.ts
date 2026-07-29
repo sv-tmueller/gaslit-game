@@ -7,11 +7,11 @@
 // is pack order (see atlas-spec.ts), and matches the layout table in
 // docs/design/visual-identity.md.
 import type { AtlasFrameName } from '../render/atlas.ts';
-import type { PaletteToken } from '../render/palette.ts';
 
 export type ArtChar = '.' | 'v' | 'n' | 'd' | 'e' | 'b' | 'x';
 
-// '.' is the reserved transparent index (0); the rest map to PALETTE_ORDER (1-6).
+// '.' is the reserved transparent index (0); the rest map to PALETTE_ORDER (1-6):
+// v=void, n=night, d=dusk, e=edge, b=bone, x=lethal.
 export const CHAR_TO_INDEX: Record<ArtChar, number> = {
   '.': 0,
   v: 1,
@@ -20,17 +20,6 @@ export const CHAR_TO_INDEX: Record<ArtChar, number> = {
   e: 4,
   b: 5,
   x: 6,
-};
-
-// Sanity mirror of PALETTE_ORDER's token names, kept here only as documentation of the
-// char-to-token mapping; atlas-spec.ts is what actually builds the PLTE from PALETTE_ORDER.
-export const CHAR_TOKEN: Record<Exclude<ArtChar, '.'>, PaletteToken> = {
-  v: 'void',
-  n: 'night',
-  d: 'dusk',
-  e: 'edge',
-  b: 'bone',
-  x: 'lethal',
 };
 
 export interface ArtFrame {

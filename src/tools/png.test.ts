@@ -141,4 +141,46 @@ describe('encodeIndexedPng', () => {
 
     expect(Array.from(first)).toEqual(Array.from(second));
   });
+
+  it('throws instead of silently truncating a raw buffer over the 65535-byte stored-block limit', () => {
+    // bytesPerRow = ceil(1000 * 4 / 8) = 500; raw = (500 + 1) * 200 = 100200 > 0xffff.
+    const width = 1000;
+    const height = 200;
+
+    expect(() =>
+      encodeIndexedPng({
+        width,
+        height,
+        indices: new Uint8Array(width * height),
+        palette,
+      }),
+    ).toThrow(/65535|0xffff/);
+  });
+
+  it('throws when the palette has more than 16 entries', () => {
+    const oversizedPalette: Array<readonly [number, number, number]> = Array.from(
+      { length: 17 },
+      (_, i) => [i, i, i] as const,
+    );
+
+    expect(() =>
+      encodeIndexedPng({
+        width: 1,
+        height: 1,
+        indices: new Uint8Array([0]),
+        palette: oversizedPalette,
+      }),
+    ).toThrow(/16/);
+  });
+
+  it('throws when an index exceeds 15 instead of silently truncating it with & 0x0f', () => {
+    expect(() =>
+      encodeIndexedPng({
+        width: 1,
+        height: 1,
+        indices: new Uint8Array([16]),
+        palette,
+      }),
+    ).toThrow(/15/);
+  });
 });
