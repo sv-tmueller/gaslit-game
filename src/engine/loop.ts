@@ -106,8 +106,8 @@ export function createRafTicker(): Ticker {
   return {
     start(onFrame: (nowMs: number) => void): void {
       const tick = (nowMs: number): void => {
-        onFrame(nowMs);
         handle = requestAnimationFrame(tick);
+        onFrame(nowMs);
       };
       handle = requestAnimationFrame(tick);
     },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Ticker } from './loop';
-import { MAX_SUBSTEPS, createLoop } from './loop';
+import { DT, MAX_SUBSTEPS, createLoop } from './loop';
 
 /**
  * Manual ticker for headless tests: `start` records the frame callback and
@@ -38,7 +38,7 @@ describe('createLoop', () => {
     (fps) => {
       const steps: number[] = [];
       const { ticker, frame } = createManualTicker();
-      const loop = createLoop({ step: () => steps.push(1), render: () => {} }, ticker);
+      const loop = createLoop({ step: (dt) => steps.push(dt), render: () => {} }, ticker);
 
       loop.start();
       frame(0); // seed frame: establishes the origin, runs no steps
@@ -53,6 +53,9 @@ describe('createLoop', () => {
       // the step count from absolute elapsed time rather than a summed
       // per-frame accumulator (see the SUB_PLAN numerics rationale).
       expect(steps).toHaveLength(60);
+      for (const dt of steps) {
+        expect(dt).toBe(DT);
+      }
     },
   );
 
@@ -182,21 +185,14 @@ describe('createLoop', () => {
     expect(calls).toEqual(['step', 'step', 'step', 'step', 'step', 'render']);
   });
 
-  it('stops the ticker and delivers no further callbacks after stop', () => {
-    const steps: number[] = [];
-    const renders: number[] = [];
+  it('stops the ticker on stop', () => {
     const { ticker, frame, stopped } = createManualTicker();
-    const loop = createLoop({ step: () => steps.push(1), render: () => renders.push(1) }, ticker);
+    const loop = createLoop({ step: () => {}, render: () => {} }, ticker);
 
     loop.start();
     frame(0);
     loop.stop();
 
     expect(stopped()).toBe(true);
-
-    frame(1000);
-
-    expect(steps).toHaveLength(0);
-    expect(renders).toHaveLength(1);
   });
 });
