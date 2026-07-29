@@ -24,17 +24,17 @@ That idea only works if it stays fair, so three guardrails hold at all times:
 
 Vanilla TypeScript and Canvas2D, built with Vite, tested with Vitest.
 
-The game runs a fixed 320x180 backbuffer scaled to the viewport, on a deterministic fixed-step 60 Hz simulation driven by a seeded PRNG. The mutation system depends on that determinism: a run has to be reproducible from its seed, and the validation harness planned for M8 needs to replay attempts exactly. Getting that requires direct control over the render loop, the step, and the source of randomness. An engine like Phaser solves problems this project does not have and would add more surface area than it removes at this scope.
+The game targets a fixed 320x180 backbuffer scaled to the viewport, on a deterministic fixed-step 60 Hz simulation driven by a seeded PRNG. The mutation system depends on that determinism: a run has to be reproducible from its seed, and the validation harness planned for M8 needs to replay attempts exactly. Getting that requires direct control over the render loop, the step, and the source of randomness. An engine like Phaser solves problems this project does not have and would add more surface area than it removes at this scope.
 
 ## Build, run, test
 
 ```
 npm install
-npm run dev        # local dev server
-npm run build       # production build
-npm run test        # unit tests
-npm run lint         # lint
-npm run typecheck    # type checking
+npm run dev          # start the Vite dev server
+npm run build        # production build to dist/
+npm test             # run the Vitest suite once
+npm run lint         # eslint
+npm run typecheck    # tsc --noEmit
 ```
 
 These are the five scripts the project ships. If the tooling package (#1) has not merged yet, treat the commands above as the intended interface rather than a working one.
