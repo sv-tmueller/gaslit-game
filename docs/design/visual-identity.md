@@ -8,14 +8,14 @@ Gaslit's palette, rendering rules, typography and tile grammar. This document is
 Six named hex tokens, no more. Five neutrals form a single value ramp; `lethal` is the only
 saturated color the game ever draws.
 
-| Token | Hex | Rule |
-| --- | --- | --- |
-| `void` | `#05050a` | Backbuffer clear color. Nothing is drawn in it. |
-| `night` | `#12121c` | The body of every solid collidable tile. The mass of the world. |
-| `dusk` | `#24243a` | Background scenery, parallax, inert or disabled states. Never collidable, never lethal. |
-| `edge` | `#4a4a63` | The lit top surface of solids, the whole body of one-way platforms, structural outlines. Reads as "you can stand here". |
-| `bone` | `#e6e6f0` | The player, the exit interior, all text, all UI. The player-trust color. |
-| `lethal` | `#ff2e3c` | Anything that kills, at the moment it is being honest. Nothing else, ever. |
+| Token    | Hex       | Rule                                                                                                                    |
+| -------- | --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `void`   | `#05050a` | Backbuffer clear color. Nothing is drawn in it.                                                                         |
+| `night`  | `#12121c` | The body of every solid collidable tile. The mass of the world.                                                         |
+| `dusk`   | `#24243a` | Background scenery, parallax, inert or disabled states. Never collidable, never lethal.                                 |
+| `edge`   | `#4a4a63` | The lit top surface of solids, the whole body of one-way platforms, structural outlines. Reads as "you can stand here". |
+| `bone`   | `#e6e6f0` | The player, the exit interior, all text, all UI. The player-trust color.                                                |
+| `lethal` | `#ff2e3c` | Anything that kills, at the moment it is being honest. Nothing else, ever.                                              |
 
 The palette is exported as a TypeScript constant, `PALETTE` in `src/render/palette.ts`, so code
 and art cannot drift apart. Any new game color literal belongs there; the only exception is the
@@ -87,22 +87,22 @@ Player frames are 16x24 (the sprite extends 8 px above a 16x16 AABB for head and
 other frame is 16x16. Eight player frames fill row one exactly (`8 * 16 = 128`px); the six tile
 and mark frames start row two. The atlas is **128 x 40**.
 
-| name | x | y | w | h | origin |
-| --- | --- | --- | --- | --- | --- |
-| `player.idle.0` | 0 | 0 | 16 | 24 | 0, 8 |
-| `player.idle.1` | 16 | 0 | 16 | 24 | 0, 8 |
-| `player.run.0` | 32 | 0 | 16 | 24 | 0, 8 |
-| `player.run.1` | 48 | 0 | 16 | 24 | 0, 8 |
-| `player.run.2` | 64 | 0 | 16 | 24 | 0, 8 |
-| `player.run.3` | 80 | 0 | 16 | 24 | 0, 8 |
-| `player.jump` | 96 | 0 | 16 | 24 | 0, 8 |
-| `player.fall` | 112 | 0 | 16 | 24 | 0, 8 |
-| `tile.solid.top` | 0 | 24 | 16 | 16 | 0, 0 |
-| `tile.solid.fill` | 16 | 24 | 16 | 16 | 0, 0 |
-| `tile.oneway` | 32 | 24 | 16 | 16 | 0, 0 |
-| `hazard.spikes` | 48 | 24 | 16 | 16 | 0, 0 |
-| `exit.door` | 64 | 24 | 16 | 16 | 0, 0 |
-| `title.mark` | 80 | 24 | 16 | 16 | 0, 0 |
+| name              | x   | y   | w   | h   | origin |
+| ----------------- | --- | --- | --- | --- | ------ |
+| `player.idle.0`   | 0   | 0   | 16  | 24  | 0, 8   |
+| `player.idle.1`   | 16  | 0   | 16  | 24  | 0, 8   |
+| `player.run.0`    | 32  | 0   | 16  | 24  | 0, 8   |
+| `player.run.1`    | 48  | 0   | 16  | 24  | 0, 8   |
+| `player.run.2`    | 64  | 0   | 16  | 24  | 0, 8   |
+| `player.run.3`    | 80  | 0   | 16  | 24  | 0, 8   |
+| `player.jump`     | 96  | 0   | 16  | 24  | 0, 8   |
+| `player.fall`     | 112 | 0   | 16  | 24  | 0, 8   |
+| `tile.solid.top`  | 0   | 24  | 16  | 16  | 0, 0   |
+| `tile.solid.fill` | 16  | 24  | 16  | 16  | 0, 0   |
+| `tile.oneway`     | 32  | 24  | 16  | 16  | 0, 0   |
+| `hazard.spikes`   | 48  | 24  | 16  | 16  | 0, 0   |
+| `exit.door`       | 64  | 24  | 16  | 16  | 0, 0   |
+| `title.mark`      | 80  | 24  | 16  | 16  | 0, 0   |
 
 The region x 96-127, y 24-39 is unused and fully transparent.
 
