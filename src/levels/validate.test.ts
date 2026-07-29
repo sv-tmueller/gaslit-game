@@ -160,4 +160,85 @@ describe('parseLevel', () => {
       message: 'traps[0].params: expected a plain object, got array',
     });
   });
+
+  it('reports duplicate-trap-id for two traps sharing an id and nothing else', () => {
+    const doc = validDocument();
+    doc['traps'] = [
+      { id: 'same-id', type: 'spike', trigger: 'on-enter', params: {} },
+      { id: 'same-id', type: 'gas-jet', trigger: 'on-exit', params: {} },
+    ];
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toEqual({
+      code: 'duplicate-trap-id',
+      path: 'traps[1].id',
+      message: 'traps[1].id: duplicate trap id "same-id"',
+    });
+  });
+
+  it('accepts traps with distinct ids', () => {
+    const doc = validDocument();
+    doc['traps'] = [
+      { id: 'first', type: 'spike', trigger: 'on-enter', params: {} },
+      { id: 'second', type: 'gas-jet', trigger: 'on-exit', params: {} },
+    ];
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.level.traps).toHaveLength(2);
+  });
+
+  it('reports missing-spawn with a "missing" message when spawn is absent', () => {
+    const doc = validDocument();
+    delete doc['spawn'];
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toEqual({
+      code: 'missing-spawn',
+      path: 'spawn',
+      message: 'spawn: required field is missing',
+    });
+  });
+
+  it('reports missing-spawn with a "wrong type" message when spawn is present but not an object', () => {
+    const doc = validDocument();
+    doc['spawn'] = 'not-an-object';
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toEqual({
+      code: 'missing-spawn',
+      path: 'spawn',
+      message: 'spawn: expected an object with col and row, got "not-an-object"',
+    });
+  });
+
+  it('reports missing-exit with a "wrong type" message when exit is present but not an object', () => {
+    const doc = validDocument();
+    doc['exit'] = 42;
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toEqual({
+      code: 'missing-exit',
+      path: 'exit',
+      message: 'exit: expected an object with col and row, got 42',
+    });
+  });
 });

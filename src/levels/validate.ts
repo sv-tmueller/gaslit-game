@@ -107,7 +107,13 @@ function validatePosition(
   }
 
   if (!isPlainObject(value)) {
-    errors.push(error(missingCode, field, `${field}: required field is missing`));
+    errors.push(
+      error(
+        missingCode,
+        field,
+        `${field}: expected an object with col and row, got ${describe(value)}`,
+      ),
+    );
     return undefined;
   }
 
@@ -232,6 +238,7 @@ function validateTraps(
   }
 
   const traps: TrapEntry[] = [];
+  const seenIds = new Set<string>();
   let ok = true;
 
   for (let i = 0; i < value.length; i += 1) {
@@ -261,6 +268,13 @@ function validateTraps(
         ),
       );
       entryOk = false;
+    } else if (seenIds.has(id)) {
+      errors.push(
+        error('duplicate-trap-id', `${path}.id`, `${path}.id: duplicate trap id ${describe(id)}`),
+      );
+      entryOk = false;
+    } else {
+      seenIds.add(id);
     }
     if (typeof type !== 'string' || type.length === 0) {
       errors.push(

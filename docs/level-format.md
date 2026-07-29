@@ -69,6 +69,8 @@ cols` and `0 <= row < rows`.
 - **`traps`** (array, required, may be empty): structurally validated only.
   Each entry is:
   - **`id`** (`string`, non-empty): trap identifier, unique within the level.
+    A second entry reusing an id already seen earlier in the array is
+    rejected with `duplicate-trap-id`.
   - **`type`** (`string`, non-empty): not checked against any registry.
     Later batches implement trap behavior; this package only carries the
     field through so the format is stable before a single trap exists.
@@ -77,6 +79,11 @@ cols` and `0 <= row < rows`.
     reference, unchanged. No clone, no freeze. Omit it entirely for traps
     that take no parameters; a level author does not have to write
     `"params": {}`.
+
+  The validator rebuilds each trap entry as a fresh `{ id, type, trigger,
+params }` object. `params` is carried through unchanged (reference-equal
+  to the source value); any other key present on a source trap entry is
+  silently dropped.
 
 ## Tile ids
 
@@ -138,8 +145,10 @@ distinct error code:
 | `traps: [{ id: 'a', type: 'spike' }]` | `malformed-trap`     | `traps[0].trigger` | `traps[0].trigger: expected a non-empty string, got undefined`                               |
 
 A few more codes exist beyond this table for completeness (`not-an-object`,
-`bad-name`, `spawn-out-of-bounds`, `duplicate-trap-id`), following the same
-naming and message conventions.
+`bad-name`, `spawn-out-of-bounds`), following the same naming and message
+conventions, plus `duplicate-trap-id`: two traps sharing an `id` produce a
+single error at the path of the second (or any later) offending entry, for
+example `traps[1].id`.
 
 Note the off-by-one in row four of the table: `cols: 20` means column `20`
 is the first invalid index, so `exit.col: 20` is out of bounds against a
@@ -181,8 +190,9 @@ without re-simulating the controller.
 - No level editor.
 - No rendering of levels.
 - No trap behavior or trap type registry. `traps[].type` is not checked
-  against any registry; entries are validated structurally and preserved
-  verbatim by reference.
+  against any registry; entries are validated structurally, and `params` is
+  preserved by reference. Any key on a trap entry other than `id`, `type`,
+  `trigger` and `params` is dropped.
 - No compression or binary format.
 - No `mutations:` section. The level format will be extended for
   attempt-keyed deltas in M4, deliberately not designed ahead of its use.
