@@ -1,0 +1,82 @@
+name: Bug report
+description: Report something broken in the game.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gaslit deliberately mutates levels between attempts, and the HUD deliberately lies about the change. That is the core mechanic working as designed, not a bug.
+
+        File a report if it broke one of these: a mutation happened mid-run instead of at level start, a mutation you could not see before committing to it, a mutation made the level unsolvable, the game softlocked, or the game crashed. Anything else clearly broken, such as rendering, audio, input or lost progress, is welcome too.
+  - type: checkboxes
+    id: searched-existing
+    attributes:
+      label: Existing issues
+      options:
+        - label: I searched existing issues and this isn't a duplicate.
+          required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: e.g. Chrome 126, Safari 17.5
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system and version
+      placeholder: e.g. macOS 15.1, Windows 11
+    validations:
+      required: true
+  - type: input
+    id: level
+    attributes:
+      label: Level
+      description: The level this happened on. If it wasn't in a level, say so.
+      placeholder: e.g. "Level 7", "title screen", "level select", "not in a level"
+    validations:
+      required: true
+  - type: dropdown
+    id: where-played
+    attributes:
+      label: Where did this happen?
+      description: This separates deploy problems from code problems.
+      options:
+        - Deployed site
+        - Local dev server
+        - Local production build
+    validations:
+      required: true
+  - type: input
+    id: attempt-count
+    attributes:
+      label: Attempt or death count on that level
+      description: Mutation is keyed on level id and attempt count, so this number is often what makes a mutation bug reproducible.
+      placeholder: e.g. 4th attempt
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do, in order, right before this happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: console-output
+    attributes:
+      label: Browser console output
+      description: Optional. Paste any errors or warnings from the browser console.
+      render: text

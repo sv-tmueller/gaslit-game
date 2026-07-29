@@ -1,0 +1,55 @@
+name: Trap or level idea
+description: Propose a new trap, level, or gaslighting mechanic.
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Around 50 planned traps and levels are already tracked as `roadmap` placeholders, including gravity inversion, bombs, buzzsaws, teleporters, and camera trolls. Search the [open roadmap issues](https://github.com/sv-tmueller/gaslit-game/issues?q=is%3Aissue+is%3Aopen+label%3Aroadmap) before filing a new one.
+  - type: checkboxes
+    id: checked-roadmap
+    attributes:
+      label: Roadmap check
+      options:
+        - label: I checked the open `roadmap` issues and this isn't already tracked.
+          required: true
+  - type: dropdown
+    id: idea-kind
+    attributes:
+      label: What kind of idea is this?
+      options:
+        - Trap idea
+        - Level idea
+        - Gaslighting or denial idea
+        - Other mechanic
+    validations:
+      required: true
+  - type: textarea
+    id: the-idea
+    attributes:
+      label: The idea
+      description: One paragraph.
+    validations:
+      required: true
+  - type: textarea
+    id: player-experience
+    attributes:
+      label: What the player sees, and how they learn to beat it
+    validations:
+      required: true
+  - type: textarea
+    id: fairness-guardrails
+    attributes:
+      label: How does this respect the fairness guardrails?
+      description: |
+        1. Mutations apply at level start only. The level never changes under your feet mid-run.
+        2. Every mutated element is on screen and readable before the player can commit to it. The lie is about memory, never about reaction time.
+        3. A mutation may never make a level unsolvable.
+    validations:
+      required: true
+  - type: textarea
+    id: prior-art
+    attributes:
+      label: Seen anything like it elsewhere?
+      description: Gaslit's designs are original, with Level Devil named only as a genre inspiration. This is originality hygiene, not an invitation to paste another game's trap.
