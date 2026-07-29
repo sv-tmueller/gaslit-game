@@ -8,12 +8,7 @@ export const Tile = { Empty: 0, Solid: 1, OneWay: 2, Hazard: 3 } as const;
 export type Tile = (typeof Tile)[keyof typeof Tile];
 
 export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | readonly JsonValue[]
-  | { readonly [key: string]: JsonValue };
+  string | number | boolean | null | readonly JsonValue[] | { readonly [key: string]: JsonValue };
 
 export interface TilePosition {
   readonly col: number;
