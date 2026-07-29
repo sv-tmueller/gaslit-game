@@ -34,7 +34,7 @@ function createManualTicker(): {
 
 describe('createLoop', () => {
   it.each([30, 60, 144, 240])(
-    'runs exactly %i steps for a synthetic one-second clock at %i fps',
+    'runs exactly 60 steps for a synthetic one-second clock at %i fps',
     (fps) => {
       const steps: number[] = [];
       const { ticker, frame } = createManualTicker();
@@ -48,7 +48,11 @@ describe('createLoop', () => {
         frame(((i + 1) * totalMs) / fps);
       }
 
-      expect(steps).toHaveLength(fps);
+      // The simulation runs at a fixed 60 Hz regardless of the display
+      // cadence feeding it frames, which is the whole point of deriving
+      // the step count from absolute elapsed time rather than a summed
+      // per-frame accumulator (see the SUB_PLAN numerics rationale).
+      expect(steps).toHaveLength(60);
     },
   );
 
