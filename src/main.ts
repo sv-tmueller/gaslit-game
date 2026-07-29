@@ -1,7 +1,8 @@
 import { BASE_HEIGHT, BASE_WIDTH, computeCanvasLayout } from './scale';
+import { PALETTE } from './render/palette';
 
 // Placeholder fill until game logic exists; proves the deploy pipeline end to end.
-const PLACEHOLDER_COLOR = '#1b1b2f';
+const PLACEHOLDER_COLOR = PALETTE.void;
 
 function bootstrap(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
   // Offscreen backbuffer at the fixed internal resolution; the visible canvas is
