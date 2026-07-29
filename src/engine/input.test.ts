@@ -1,5 +1,53 @@
-import { describe, expect, it } from 'vitest';
-import { DEFAULT_BINDINGS, createKeyboardInput, type InputAction } from './input';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  DEFAULT_BINDINGS,
+  attachKeyboardInput,
+  createKeyboardInput,
+  type InputAction,
+  type KeyEventLike,
+  type KeyEventSource,
+} from './input';
+
+type Listener = (event: KeyEventLike) => void;
+
+function createStubEventSource(): KeyEventSource & {
+  emit(type: 'keydown' | 'keyup' | 'blur', event: KeyEventLike): void;
+  listenerCount(type: 'keydown' | 'keyup' | 'blur'): number;
+} {
+  const listeners = new Map<'keydown' | 'keyup' | 'blur', Set<Listener>>([
+    ['keydown', new Set()],
+    ['keyup', new Set()],
+    ['blur', new Set()],
+  ]);
+
+  return {
+    addEventListener(type, listener) {
+      listeners.get(type)?.add(listener);
+    },
+    removeEventListener(type, listener) {
+      listeners.get(type)?.delete(listener);
+    },
+    emit(type, event) {
+      for (const listener of listeners.get(type) ?? []) {
+        listener(event);
+      }
+    },
+    listenerCount(type) {
+      return listeners.get(type)?.size ?? 0;
+    },
+  };
+}
+
+function keyEvent(code: string, modifiers: Partial<KeyEventLike> = {}): KeyEventLike {
+  return {
+    code,
+    ctrlKey: false,
+    metaKey: false,
+    altKey: false,
+    preventDefault: vi.fn(),
+    ...modifiers,
+  };
+}
 
 describe('createKeyboardInput core edges', () => {
   it('reports pressed for exactly one sample after a key goes down', () => {
@@ -147,5 +195,66 @@ describe('DEFAULT_BINDINGS', () => {
     expect(DEFAULT_BINDINGS.right).toEqual(expect.arrayContaining(['ArrowRight', 'KeyD']));
     expect(DEFAULT_BINDINGS.jump).toEqual(expect.arrayContaining(['Space', 'ArrowUp']));
     expect(DEFAULT_BINDINGS.restart).toEqual(expect.arrayContaining(['KeyR']));
+  });
+});
+
+describe('attachKeyboardInput', () => {
+  it('prevents default for a bound code and not for an unbound one', () => {
+    const input = createKeyboardInput();
+    const source = createStubEventSource();
+    attachKeyboardInput(input, source);
+
+    const bound = keyEvent('ArrowRight');
+    source.emit('keydown', bound);
+    expect(bound.preventDefault).toHaveBeenCalledOnce();
+
+    const unbound = keyEvent('KeyZ');
+    source.emit('keydown', unbound);
+    expect(unbound.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it('ignores a keydown carrying a modifier and does not prevent it, but still processes its keyup', () => {
+    const input = createKeyboardInput();
+    const source = createStubEventSource();
+    attachKeyboardInput(input, source);
+
+    const metaDown = keyEvent('KeyR', { metaKey: true });
+    source.emit('keydown', metaDown);
+    expect(metaDown.preventDefault).not.toHaveBeenCalled();
+    expect(input.sample().held.restart).toBe(false);
+
+    source.emit('keydown', keyEvent('KeyR'));
+    source.emit('keyup', keyEvent('KeyR', { metaKey: true }));
+    const snapshot = input.sample();
+    expect(snapshot.pressed.restart).toBe(true);
+    expect(snapshot.released.restart).toBe(true);
+  });
+
+  it('clears held when the source emits blur', () => {
+    const input = createKeyboardInput();
+    const source = createStubEventSource();
+    attachKeyboardInput(input, source);
+
+    source.emit('keydown', keyEvent('ArrowRight'));
+    input.sample();
+
+    source.emit('blur', keyEvent(''));
+    const snapshot = input.sample();
+    expect(snapshot.held.right).toBe(false);
+    expect(snapshot.released.right).toBe(true);
+  });
+
+  it('removes all listeners on detach so a later keydown changes nothing', () => {
+    const input = createKeyboardInput();
+    const source = createStubEventSource();
+    const detach = attachKeyboardInput(input, source);
+
+    detach();
+    expect(source.listenerCount('keydown')).toBe(0);
+    expect(source.listenerCount('keyup')).toBe(0);
+    expect(source.listenerCount('blur')).toBe(0);
+
+    source.emit('keydown', keyEvent('ArrowRight'));
+    expect(input.sample().held.right).toBe(false);
   });
 });

@@ -114,3 +114,52 @@ export function createKeyboardInput(bindings: KeyBindings = DEFAULT_BINDINGS): K
     },
   };
 }
+
+export interface KeyEventLike {
+  readonly code: string;
+  readonly ctrlKey: boolean;
+  readonly metaKey: boolean;
+  readonly altKey: boolean;
+  preventDefault(): void;
+}
+
+export interface KeyEventSource {
+  addEventListener(type: 'keydown' | 'keyup' | 'blur', listener: (event: KeyEventLike) => void): void;
+  removeEventListener(
+    type: 'keydown' | 'keyup' | 'blur',
+    listener: (event: KeyEventLike) => void,
+  ): void;
+}
+
+export function attachKeyboardInput(input: KeyboardInput, source: KeyEventSource): () => void {
+  function onKeyDown(event: KeyEventLike): void {
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+    if (input.isBound(event.code)) {
+      event.preventDefault();
+    }
+    input.keyDown(event.code);
+  }
+
+  function onKeyUp(event: KeyEventLike): void {
+    if (input.isBound(event.code)) {
+      event.preventDefault();
+    }
+    input.keyUp(event.code);
+  }
+
+  function onBlur(): void {
+    input.blur();
+  }
+
+  source.addEventListener('keydown', onKeyDown);
+  source.addEventListener('keyup', onKeyUp);
+  source.addEventListener('blur', onBlur);
+
+  return function detach(): void {
+    source.removeEventListener('keydown', onKeyDown);
+    source.removeEventListener('keyup', onKeyUp);
+    source.removeEventListener('blur', onBlur);
+  };
+}
