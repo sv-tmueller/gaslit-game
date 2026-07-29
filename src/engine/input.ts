@@ -124,7 +124,10 @@ export interface KeyEventLike {
 }
 
 export interface KeyEventSource {
-  addEventListener(type: 'keydown' | 'keyup' | 'blur', listener: (event: KeyEventLike) => void): void;
+  addEventListener(
+    type: 'keydown' | 'keyup' | 'blur',
+    listener: (event: KeyEventLike) => void,
+  ): void;
   removeEventListener(
     type: 'keydown' | 'keyup' | 'blur',
     listener: (event: KeyEventLike) => void,
@@ -163,3 +166,8 @@ export function attachKeyboardInput(input: KeyboardInput, source: KeyEventSource
     source.removeEventListener('blur', onBlur);
   };
 }
+
+// Compile-time proof that attachKeyboardInput(input, window) needs no cast:
+// window satisfies KeyEventSource without any runtime code here.
+type AssertAssignable<T extends U, U> = T;
+export type WindowIsAKeyEventSource = AssertAssignable<Window & typeof globalThis, KeyEventSource>;

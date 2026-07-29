@@ -258,3 +258,28 @@ describe('attachKeyboardInput', () => {
     expect(input.sample().held.right).toBe(false);
   });
 });
+
+describe('InputSnapshot immutability', () => {
+  it('freezes the snapshot and its held, pressed, and released records', () => {
+    const input = createKeyboardInput();
+
+    const snapshot = input.sample();
+
+    expect(Object.isFrozen(snapshot)).toBe(true);
+    expect(Object.isFrozen(snapshot.held)).toBe(true);
+    expect(Object.isFrozen(snapshot.pressed)).toBe(true);
+    expect(Object.isFrozen(snapshot.released)).toBe(true);
+  });
+
+  it('returns a distinct object identity from each sample call', () => {
+    const input = createKeyboardInput();
+
+    const first = input.sample();
+    const second = input.sample();
+
+    expect(first).not.toBe(second);
+    expect(first.held).not.toBe(second.held);
+    expect(first.pressed).not.toBe(second.pressed);
+    expect(first.released).not.toBe(second.released);
+  });
+});
