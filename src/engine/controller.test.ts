@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TILE_SIZE, type Body } from './physics';
+import { TILE_SIZE, type Body, type TileGrid } from './physics';
 import {
   COYOTE_STEPS,
   JUMP_VEL,
@@ -26,6 +26,41 @@ function makeBody(overrides: Partial<Body> = {}): Body {
 
 function actions(overrides: Partial<ControllerActions> = {}): ControllerActions {
   return { left: false, right: false, jumpPressed: false, jumpHeld: false, ...overrides };
+}
+
+// Walks a grounded body right off a ledge and returns the state from the
+// first step whose resolve left it airborne (T+1, where T is the last
+// grounded step), so coyote-time tests observe a real transition instead of
+// a hand-set coyoteSteps.
+function walkOffLedge(grid: TileGrid): ControllerState {
+  const walkRight = actions({ right: true });
+  let state = createControllerState(makeBody({ x: 0, y: 0, grounded: true }));
+
+  for (let i = 0; i < 100; i++) {
+    const wasGrounded = state.body.grounded;
+    state = stepController(state, walkRight, grid, DT);
+    if (wasGrounded && !state.body.grounded) {
+      return state;
+    }
+  }
+
+  throw new Error('body never walked off the ledge');
+}
+
+// Counts the steps a free-falling body takes to land, so buffer tests can
+// press a real number of steps before a real landing instead of a hand-set
+// jumpBufferSteps.
+function stepsUntilGrounded(grid: TileGrid): number {
+  let state = createControllerState(makeBody({ x: 0, y: 0 }));
+  const noJump = actions();
+  let steps = 0;
+
+  while (!state.body.grounded) {
+    state = stepController(state, noJump, grid, DT);
+    steps++;
+  }
+
+  return steps;
 }
 
 describe('createControllerState', () => {
@@ -116,29 +151,39 @@ describe('stepController - grounding and coyote time', () => {
   });
 
   it('fires a coyote jump on step T+6, six steps after leaving the ground', () => {
-    const grid = parseGrid(['.']);
-    const state: ControllerState = {
-      body: makeBody({ grounded: false }),
-      coyoteSteps: 1,
-      jumpBufferSteps: -1,
-      jumpCutArmed: false,
-    };
+    const grid = parseGrid(['...', '###']);
+    const walkRight = actions({ right: true });
 
-    const result = stepController(state, actions({ jumpPressed: true, jumpHeld: true }), grid, DT);
+    let state = walkOffLedge(grid);
+    for (let i = 0; i < 4; i++) {
+      state = stepController(state, walkRight, grid, DT);
+    }
+
+    const result = stepController(
+      state,
+      actions({ right: true, jumpPressed: true, jumpHeld: true }),
+      grid,
+      DT,
+    );
 
     expect(result.body.velocity.y).toBe(JUMP_VEL);
   });
 
   it('refuses a coyote jump on step T+7, seven steps after leaving the ground', () => {
-    const grid = parseGrid(['.']);
-    const state: ControllerState = {
-      body: makeBody({ grounded: false }),
-      coyoteSteps: 0,
-      jumpBufferSteps: -1,
-      jumpCutArmed: false,
-    };
+    const grid = parseGrid(['...', '###']);
+    const walkRight = actions({ right: true });
 
-    const result = stepController(state, actions({ jumpPressed: true, jumpHeld: true }), grid, DT);
+    let state = walkOffLedge(grid);
+    for (let i = 0; i < 5; i++) {
+      state = stepController(state, walkRight, grid, DT);
+    }
+
+    const result = stepController(
+      state,
+      actions({ right: true, jumpPressed: true, jumpHeld: true }),
+      grid,
+      DT,
+    );
 
     expect(result.body.velocity.y).not.toBe(JUMP_VEL);
   });
@@ -161,32 +206,40 @@ describe('stepController - grounding and coyote time', () => {
 });
 
 describe('stepController - jump buffering', () => {
-  it('fires a buffered jump pressed 7 steps before landing', () => {
-    const grid = parseGrid(['.']);
-    const state: ControllerState = {
-      body: makeBody({ grounded: false }),
-      coyoteSteps: COYOTE_STEPS,
-      jumpBufferSteps: 1,
-      jumpCutArmed: false,
-    };
+  it('fires a jump buffered 6 real steps before an actual landing', () => {
+    const grid = parseGrid(['...', '...', '###']);
+    const noJump = actions();
+    const landingStep = stepsUntilGrounded(grid);
 
-    const result = stepController(state, actions({ jumpHeld: true }), grid, DT);
+    let state = createControllerState(makeBody({ x: 0, y: 0 }));
+    for (let step = 1; step <= landingStep; step++) {
+      const act =
+        step === landingStep - 6 ? actions({ jumpPressed: true, jumpHeld: true }) : noJump;
+      state = stepController(state, act, grid, DT);
+    }
+    expect(state.body.grounded).toBe(true);
+    expect(state.body.velocity.y).toBe(0);
 
-    expect(result.body.velocity.y).toBe(JUMP_VEL);
+    state = stepController(state, actions({ jumpHeld: true }), grid, DT);
+    expect(state.body.velocity.y).toBe(JUMP_VEL);
   });
 
-  it('refuses a buffered jump pressed 8 steps before landing', () => {
-    const grid = parseGrid(['.']);
-    const state: ControllerState = {
-      body: makeBody({ grounded: false }),
-      coyoteSteps: COYOTE_STEPS,
-      jumpBufferSteps: 0,
-      jumpCutArmed: false,
-    };
+  it('refuses a jump buffered 7 real steps before an actual landing', () => {
+    const grid = parseGrid(['...', '...', '###']);
+    const noJump = actions();
+    const landingStep = stepsUntilGrounded(grid);
 
-    const result = stepController(state, actions({ jumpHeld: true }), grid, DT);
+    let state = createControllerState(makeBody({ x: 0, y: 0 }));
+    for (let step = 1; step <= landingStep; step++) {
+      const act =
+        step === landingStep - 7 ? actions({ jumpPressed: true, jumpHeld: true }) : noJump;
+      state = stepController(state, act, grid, DT);
+    }
+    expect(state.body.grounded).toBe(true);
+    expect(state.body.velocity.y).toBe(0);
 
-    expect(result.body.velocity.y).not.toBe(JUMP_VEL);
+    state = stepController(state, actions({ jumpHeld: true }), grid, DT);
+    expect(state.body.velocity.y).not.toBe(JUMP_VEL);
   });
 
   it('fires a jump buffered a few steps before an actual landing, on the frame after landing', () => {
@@ -282,7 +335,7 @@ describe('stepController - variable jump height', () => {
     }
 
     const apex = startY - state.body.y;
-    expect(apex).toBeCloseTo(13.708333333333329, 9);
+    expect(apex).toBeCloseTo(329 / 24, 9);
   });
 
   it('does not allow a second jump to fire mid-ascent even when buffered', () => {
