@@ -35,8 +35,3 @@ Please do not open a public issue for a suspected vulnerability.
 There is no dedicated security team behind this project; it's maintained
 by one person. Reports will be read and triaged as soon as reasonably
 possible, but there is no guaranteed response time.
-
-> **Maintainer note:** private vulnerability reporting must be turned on
-> for this repository (Settings > Security > Private vulnerability
-> reporting) before the primary route above works. Enabling it is a
-> repository admin action and is tracked separately from this document.
