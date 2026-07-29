@@ -43,7 +43,7 @@ body:
     attributes:
       label: How does this respect the fairness guardrails?
       description: |
-        1. Mutations apply at level start only, never mid-run.
+        1. Mutations apply at level start only. The level never changes under your feet mid-run.
         2. Every mutated element is on screen and readable before the player can commit to it. The lie is about memory, never about reaction time.
         3. A mutation may never make a level unsolvable.
     validations:

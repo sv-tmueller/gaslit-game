@@ -8,7 +8,7 @@ body:
       value: |
         Gaslit deliberately mutates levels between attempts, and the HUD deliberately lies about the change. That is the core mechanic working as designed, not a bug.
 
-        Only file a report here if it broke one of these: a mutation happened mid-run instead of at level start, a mutation you could not see before committing to it, a mutation made the level unsolvable, the game softlocked, or the game crashed.
+        File a report if it broke one of these: a mutation happened mid-run instead of at level start, a mutation you could not see before committing to it, a mutation made the level unsolvable, the game softlocked, or the game crashed. Anything else clearly broken, such as rendering, audio, input or lost progress, is welcome too.
   - type: checkboxes
     id: searched-existing
     attributes:
