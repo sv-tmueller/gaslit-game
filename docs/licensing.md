@@ -16,7 +16,8 @@ permission.
 **Can I fork the engine and build my own game with it?**
 
 Yes. The code is MIT licensed. Take it, learn from it, build something
-different with it.
+different with it. Keep the copyright notice and the MIT licence text with
+the code.
 
 **Can I reskin Gaslit with my own art, audio, and levels?**
 

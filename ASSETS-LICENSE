@@ -2,16 +2,16 @@ Gaslit Assets License
 
 Copyright (c) 2026 Thomas Mueller. All rights reserved.
 
-This license covers everything in this repository that is not source code:
-art, audio, level design data, and the Gaslit name and logo. Source code is
-covered separately by the MIT license in [LICENSE](LICENSE), which does not
-extend to any of the assets covered here.
+This license covers the art, audio, level design data, and the Gaslit name
+and logo in this repository. Source code is covered separately by the MIT
+license in the LICENSE file, which does not extend to any of the assets
+covered here.
 
 No permission is granted to copy, redistribute, modify, or create derivative
 works from these assets, in whole or in part, for any purpose, without prior
 written permission from the copyright holder.
 
-## Provenance
+Provenance
 
 All art, audio, and level design data in this repository is original work
 created for this project. None of it is third-party material, and none of
