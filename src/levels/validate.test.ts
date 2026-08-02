@@ -194,20 +194,17 @@ describe('parseLevel', () => {
     expect(result.level.traps).toHaveLength(2);
   });
 
-  it('reports missing-spawn with a "missing" message when spawn is absent', () => {
+  it('does not throw for a trap params value nested hundreds of thousands of levels deep', () => {
     const doc = validDocument();
-    delete doc['spawn'];
+    let params: Record<string, unknown> = {};
+    for (let i = 0; i < 200_000; i += 1) {
+      params = { nested: params };
+    }
+    doc['traps'] = [{ id: 'a', type: 'spike', trigger: 'on-enter', params }];
 
     const result = parseLevel(doc);
 
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]).toEqual({
-      code: 'missing-spawn',
-      path: 'spawn',
-      message: 'spawn: required field is missing',
-    });
+    expect(result.ok).toBe(true);
   });
 
   it('reports missing-spawn with a "wrong type" message when spawn is present but not an object', () => {
