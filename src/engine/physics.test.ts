@@ -93,6 +93,19 @@ describe('moveAndCollide - tile span at exact boundaries', () => {
     expect(result.body.velocity.y).toBe(0);
     expect(result.body.grounded).toBe(true);
   });
+
+  it('does not treat a flush wall column as a floor when falling alongside it', () => {
+    // Naive maxCol = floor((x + w) / 16) would include the wall column in the
+    // falling body's own column span and ground it on the wall.
+    const grid = parseGrid(['..#', '..#', '..#']);
+    const body = makeBody({ x: 16, y: 0, velocity: { x: 0, y: 120 } });
+
+    const result = moveAndCollide(body, grid, DT);
+
+    expect(result.body.grounded).toBe(false);
+    expect(result.body.y).toBe(2);
+    expect(result.body.velocity.y).toBe(120);
+  });
 });
 
 describe('moveAndCollide - inside corner', () => {
