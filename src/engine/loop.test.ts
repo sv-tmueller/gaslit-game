@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Ticker } from './loop';
-import { DT, MAX_SUBSTEPS, createLoop } from './loop';
+import { DT, MAX_SUBSTEPS, createLoop, createRafTicker } from './loop';
 
 /**
  * Manual ticker for headless tests: `start` records the frame callback and
@@ -101,23 +101,156 @@ describe('createLoop', () => {
     const fps = 60;
     loop.start();
     frame(0);
+    expect(loop.paused).toBe(false);
 
     for (let i = 0; i < fps; i++) {
       frame(((i + 1) * 1000) / fps);
     }
 
     loop.pause();
+    expect(loop.paused).toBe(true);
     const pausedFrames = fps * 5;
     for (let i = 0; i < pausedFrames; i++) {
       frame(1000 + ((i + 1) * 5000) / pausedFrames);
     }
 
     loop.resume();
+    expect(loop.paused).toBe(false);
     for (let i = 0; i < fps; i++) {
       frame(6000 + ((i + 1) * 1000) / fps);
     }
 
     expect(steps).toHaveLength(120);
+  });
+
+  it('runs only the steps genuinely new elapsed time accounts for after a backwards clock jump', () => {
+    // Repro from issue #76: seed at t=0, drive 60 even frames to t=1000 (60
+    // steps), rewind to t=500 with one frame call (step count must hold at
+    // 60, not silently drop), then drive 60 more even frames from t=500 to
+    // t=1500. 500ms of genuinely new time beyond the prior high water mark
+    // (1000) should produce about 30 steps, for 90 total, not 120.
+    const steps: number[] = [];
+    const alphas: number[] = [];
+    const { ticker, frame } = createManualTicker();
+    const loop = createLoop(
+      { step: () => steps.push(1), render: (alpha) => alphas.push(alpha) },
+      ticker,
+    );
+
+    loop.start();
+    frame(0);
+
+    const fps = 60;
+    for (let i = 0; i < fps; i++) {
+      frame(((i + 1) * 1000) / fps);
+    }
+    expect(steps).toHaveLength(60);
+
+    frame(500); // clock rewinds
+    expect(steps).toHaveLength(60);
+
+    for (let i = 0; i < fps; i++) {
+      frame(500 + ((i + 1) * 1000) / fps);
+    }
+    expect(steps).toHaveLength(90);
+
+    for (const alpha of alphas) {
+      expect(alpha).toBeGreaterThanOrEqual(0);
+      expect(alpha).toBeLessThan(1);
+    }
+  });
+
+  it('does not bank phantom elapsed time from a clock rewind while paused', () => {
+    const steps: number[] = [];
+    const frameStepCounts: number[] = [];
+    const { ticker, frame: rawFrame } = createManualTicker();
+    const loop = createLoop({ step: () => steps.push(1), render: () => {} }, ticker);
+
+    const frame = (nowMs: number): void => {
+      const before = steps.length;
+      rawFrame(nowMs);
+      frameStepCounts.push(steps.length - before);
+    };
+
+    loop.start();
+    frame(0);
+
+    const fps = 60;
+    for (let i = 0; i < fps; i++) {
+      frame(((i + 1) * 1000) / fps);
+    }
+    expect(steps).toHaveLength(60);
+
+    loop.pause();
+    frame(400); // rewind while paused
+
+    loop.resume();
+    for (let i = 0; i < fps; i++) {
+      frame(1000 + ((i + 1) * 1000) / fps);
+    }
+
+    expect(steps).toHaveLength(120);
+    for (const count of frameStepCounts) {
+      expect(count).toBeLessThanOrEqual(MAX_SUBSTEPS);
+    }
+  });
+
+  describe('start() called twice without an intervening stop()', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('cannot leave an uncancellable frame chain', () => {
+      let nextHandle = 1;
+      const pending = new Map<number, FrameRequestCallback>();
+
+      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback): number => {
+        const handle = nextHandle++;
+        pending.set(handle, cb);
+        return handle;
+      });
+      vi.stubGlobal('cancelAnimationFrame', (handle: number): void => {
+        pending.delete(handle);
+      });
+
+      const flush = (nowMs: number): void => {
+        const callbacks = [...pending.values()];
+        pending.clear();
+        for (const cb of callbacks) {
+          cb(nowMs);
+        }
+      };
+
+      const renders: number[] = [];
+      const loop = createLoop({ step: () => {}, render: () => renders.push(1) }, createRafTicker());
+
+      loop.start();
+      loop.start();
+      loop.stop();
+
+      flush(16);
+
+      expect(pending.size).toBe(0);
+      expect(renders).toHaveLength(0);
+    });
+  });
+
+  it('produces exactly 600 steps over 10 synthetic seconds at 240 fps with no drift', () => {
+    const steps: number[] = [];
+    const { ticker, frame } = createManualTicker();
+    const loop = createLoop({ step: (dt) => steps.push(dt), render: () => {} }, ticker);
+
+    loop.start();
+    frame(0);
+
+    const fps = 240;
+    const totalMs = 10_000;
+    const frameCount = fps * 10;
+    for (let i = 0; i < frameCount; i++) {
+      frame(((i + 1) * totalMs) / frameCount);
+    }
+
+    expect(steps).toHaveLength(600);
   });
 
   it('still calls render on every paused frame', () => {
