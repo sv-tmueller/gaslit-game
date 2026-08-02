@@ -195,6 +195,40 @@ describe('createLoop', () => {
     }
   });
 
+  it('does not lose genuinely elapsed time across multiple rewinds while paused', () => {
+    // Repro from issue #76 finding 1: a rewind while paused followed by a
+    // partial-recovery frame that stays below the pre-rewind high point
+    // (400, then 900, both below the 1000 high water mark) must not bank
+    // any forward delta at all, since no genuine time has elapsed past the
+    // high water mark yet. The single-rewind test above only exercises one
+    // rewound frame, whose delta already clamps to zero; this sequence adds
+    // a second, partially-recovered frame whose delta the old lastFrameMs
+    // comparison (400 -> 900 is a forward delta of 500) let through.
+    const steps: number[] = [];
+    const { ticker, frame } = createManualTicker();
+    const loop = createLoop({ step: () => steps.push(1), render: () => {} }, ticker);
+
+    loop.start();
+    frame(0);
+
+    const fps = 60;
+    for (let i = 0; i < fps; i++) {
+      frame(((i + 1) * 1000) / fps);
+    }
+    expect(steps).toHaveLength(60);
+
+    loop.pause();
+    frame(400); // rewind while paused
+    frame(900); // partial recovery, still below the pre-rewind high point
+
+    loop.resume();
+    for (let i = 0; i < fps; i++) {
+      frame(1000 + ((i + 1) * 1000) / fps);
+    }
+
+    expect(steps).toHaveLength(120);
+  });
+
   describe('start() called twice without an intervening stop()', () => {
     afterEach(() => {
       vi.unstubAllGlobals();

@@ -47,16 +47,23 @@ export function createLoop(callbacks: LoopCallbacks, ticker: Ticker): Loop {
     if (paused) {
       // Shift the origin forward by this frame's wall-clock delta so the
       // elapsed time used below stays pinned; that is what makes resume
-      // replay nothing instead of running a burst of banked steps. Clamped
-      // to 0 so a clock rewind while paused cannot shift the origin
-      // backwards and bank phantom elapsed time that bursts on resume.
+      // replay nothing instead of running a burst of banked steps. The
+      // delta is measured against lastFrameMs as a true monotonic
+      // high-water mark (only ever advanced, never overwritten backwards)
+      // rather than the previous frame's raw timestamp, so a rewind
+      // followed by a partial-recovery frame that is still below the
+      // pre-rewind high point (for example 1000 -> 400 -> 900) contributes
+      // no delta at all. Comparing against the last raw frame instead would
+      // see 400 -> 900 as a genuine forward delta of 500 and bank that as
+      // phantom elapsed time, even though no time has elapsed past the
+      // prior high point yet.
       originMs += Math.max(nowMs - lastFrameMs, 0);
-      lastFrameMs = nowMs;
+      lastFrameMs = Math.max(lastFrameMs, nowMs);
       callbacks.render(alpha);
       return;
     }
 
-    lastFrameMs = nowMs;
+    lastFrameMs = Math.max(lastFrameMs, nowMs);
 
     // Deriving the step count from absolute elapsed time (rather than a
     // per-frame accumulator that sums float deltas) is required for exact
