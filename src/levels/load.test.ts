@@ -31,7 +31,9 @@ describe('loadLevel', () => {
   });
 
   it('preserves trap params verbatim, including key order', () => {
-    const level = loadLevel(validDocument());
+    const doc = validDocument();
+    const sourceParams = (doc['traps'] as Array<Record<string, unknown>>)[0]!['params'];
+    const level = loadLevel(doc);
 
     expect(level.traps).toHaveLength(1);
     expect(level.traps[0]?.params).toEqual({
@@ -40,6 +42,7 @@ describe('loadLevel', () => {
       nested: { b: 1, a: 2 },
     });
     expect(Object.keys(level.traps[0]!.params)).toEqual(['delayMs', 'note', 'nested']);
+    expect(level.traps[0]?.params).toBe(sourceParams);
   });
 
   it('throws a LevelValidationError carrying the validator errors when the document is invalid', () => {

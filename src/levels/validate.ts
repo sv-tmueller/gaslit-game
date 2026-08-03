@@ -215,15 +215,6 @@ function validateTiles(
   return flat;
 }
 
-function isJsonValue(value: unknown): value is JsonValue {
-  if (value === null) return true;
-  const t = typeof value;
-  if (t === 'string' || t === 'number' || t === 'boolean') return true;
-  if (Array.isArray(value)) return value.every(isJsonValue);
-  if (isPlainObject(value)) return Object.values(value).every(isJsonValue);
-  return false;
-}
-
 function validateTraps(
   source: Record<string, unknown>,
   errors: LevelError[],
@@ -299,7 +290,7 @@ function validateTraps(
     // params is optional on the wire; a missing params defaults to {} rather
     // than erroring, so authors are not forced to write `"params": {}` on
     // traps that take none.
-    if (params !== undefined && (!isPlainObject(params) || !isJsonValue(params))) {
+    if (params !== undefined && !isPlainObject(params)) {
       errors.push(
         error(
           'malformed-trap',
@@ -319,6 +310,10 @@ function validateTraps(
       id: id as string,
       type: type as string,
       trigger: trigger as string,
+      // Contract, not a check: only plain-object-ness is validated above.
+      // Holds for the format's actual input domain (JSON documents parsed
+      // by JSON.parse cannot contain undefined, functions, symbols or
+      // bigints); hand-built objects outside that domain are not caught.
       params: (params ?? {}) as Readonly<Record<string, JsonValue>>,
     });
   }

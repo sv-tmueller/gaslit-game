@@ -70,12 +70,16 @@ cols` and `0 <= row < rows`.
   Each entry is:
   - **`id`** (`string`, non-empty): trap identifier, unique within the level.
     A second entry reusing an id already seen earlier in the array is
-    rejected with `duplicate-trap-id`.
+    rejected with `duplicate-trap-id`. Ids are compared by exact string
+    equality, case sensitive, no trimming, so `'a'` and `'A'` are distinct
+    ids, matching how `type` and `trigger` are treated.
   - **`type`** (`string`, non-empty): not checked against any registry.
     Later batches implement trap behavior; this package only carries the
     field through so the format is stable before a single trap exists.
   - **`trigger`** (`string`, non-empty): opaque to this package.
-  - **`params`** (plain object, optional): arbitrary JSON, carried through by
+  - **`params`** (plain object, optional): validation checks only that
+    `params` is a plain object; its contents are not inspected (in practice
+    arbitrary JSON, since levels are JSON documents). Carried through by
     reference, unchanged. No clone, no freeze. Omit it entirely for traps
     that take no parameters; a level author does not have to write
     `"params": {}`.
@@ -96,8 +100,11 @@ params }` object. `params` is carried through unchanged (reference-equal
 
 ## Loading and validation
 
+Written as it would be called from a module inside `src/`, which is where
+every real call site lives:
+
 ```ts
-import { loadLevel, parseLevel, tileAt } from './src/levels';
+import { loadLevel, parseLevel, tileAt } from './levels';
 
 const result = parseLevel(source); // never throws
 if (!result.ok) {
@@ -148,7 +155,9 @@ A few more codes exist beyond this table for completeness (`not-an-object`,
 `bad-name`, `spawn-out-of-bounds`), following the same naming and message
 conventions, plus `duplicate-trap-id`: two traps sharing an `id` produce a
 single error at the path of the second (or any later) offending entry, for
-example `traps[1].id`.
+example `traps[1].id`. So is `bad-tile-layer`, produced by a wrong-length or
+non-string tile row (path `tiles[r]`), distinct from `unknown-tile`, which
+fires per offending character once the row shape is valid.
 
 Note the off-by-one in row four of the table: `cols: 20` means column `20`
 is the first invalid index, so `exit.col: 20` is out of bounds against a
@@ -158,7 +167,9 @@ is the first invalid index, so `exit.col: 20` is out of bounds against a
 
 Three hand-authored levels ship under `src/levels/fixtures/`, exported by
 `FIXTURE_SOURCES` (`src/levels/fixtures/index.ts`) keyed by name, as the raw
-`unknown` JSON documents `loadLevel`/`parseLevel` expect:
+`unknown` JSON documents `loadLevel`/`parseLevel` expect. `FIXTURE_SOURCES`
+is deliberately not re-exported from the package barrel (`src/levels/index.ts`);
+import it from `src/levels/fixtures` directly.
 
 - **`corridor.json`**, 20 x 12. Row 0 solid ceiling, rows 1 to 9 walled at
   columns 0 and 19, rows 10 and 11 all solid. Spawn `(2, 9)`, exit
