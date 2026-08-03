@@ -32,12 +32,13 @@ The game targets a fixed 320x180 backbuffer scaled to the viewport, on a determi
 npm install
 npm run dev          # start the Vite dev server
 npm run build        # production build to dist/
+npm run build:atlas  # regenerate assets/atlas.png + atlas.json (Node 22.6+)
 npm test             # run the Vitest suite once
 npm run lint         # eslint
 npm run typecheck    # tsc --noEmit
 ```
 
-These are the five scripts the project ships. If the tooling package (#1) has not merged yet, treat the commands above as the intended interface rather than a working one.
+These are the six scripts the project ships.
 
 ## Roadmap
 
@@ -59,4 +60,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licensing
 
-Code is licensed under MIT, see [LICENSE](LICENSE). Art, audio, level designs, and the Gaslit name are all rights reserved, see [ASSETS-LICENSE](ASSETS-LICENSE). A plain-language explanation of what that split means in practice is at [docs/licensing.md](docs/licensing.md).
+Code is licensed under MIT, see [LICENSE](LICENSE). Art, audio, level design data, and the Gaslit name and logo are all rights reserved, see [ASSETS-LICENSE](ASSETS-LICENSE). A plain-language explanation of what that split means in practice is at [docs/licensing.md](docs/licensing.md).
