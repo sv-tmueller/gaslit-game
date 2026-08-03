@@ -6,7 +6,10 @@ export function parseGrid(rows: readonly string[]): TileGrid {
   const colCount = rows[0]?.length ?? 0;
   const tiles: Tile[] = [];
 
-  for (const row of rows) {
+  rows.forEach((row, index) => {
+    if (row.length !== colCount) {
+      throw new Error(`parseGrid: row ${index} has length ${row.length}, expected ${colCount}`);
+    }
     for (const char of row) {
       switch (char) {
         case '#':
@@ -19,7 +22,7 @@ export function parseGrid(rows: readonly string[]): TileGrid {
           tiles.push(Tile.Empty);
       }
     }
-  }
+  });
 
   return { cols: colCount, rows: rowCount, tiles };
 }

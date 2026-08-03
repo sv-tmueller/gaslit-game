@@ -150,7 +150,7 @@ describe('stepController - grounding and coyote time', () => {
     expect(state.coyoteSteps).toBe(COYOTE_STEPS);
   });
 
-  it('fires a coyote jump on step T+6, six steps after leaving the ground', () => {
+  it('fires a coyote jump on step T+6, where T is the last step that ended grounded', () => {
     const grid = parseGrid(['...', '###']);
     const walkRight = actions({ right: true });
 
@@ -169,7 +169,7 @@ describe('stepController - grounding and coyote time', () => {
     expect(result.body.velocity.y).toBe(JUMP_VEL);
   });
 
-  it('refuses a coyote jump on step T+7, seven steps after leaving the ground', () => {
+  it('refuses a coyote jump on step T+7, where T is the last step that ended grounded', () => {
     const grid = parseGrid(['...', '###']);
     const walkRight = actions({ right: true });
 
@@ -185,7 +185,8 @@ describe('stepController - grounding and coyote time', () => {
       DT,
     );
 
-    expect(result.body.velocity.y).not.toBe(JUMP_VEL);
+    // Seventh airborne step, 7 x 15 px/s of gravity; a fired jump would read -260.
+    expect(result.body.velocity.y).toBe(105);
   });
 
   it('does not allow a second coyote jump to fire right after the first', () => {
@@ -201,10 +202,19 @@ describe('stepController - grounding and coyote time', () => {
     expect(state.body.velocity.y).toBe(JUMP_VEL);
 
     state = stepController(state, actions({ jumpPressed: true, jumpHeld: true }), grid, DT);
-    expect(state.body.velocity.y).not.toBe(JUMP_VEL);
+    // One step of gravity on the first impulse, not a re-fired impulse.
+    expect(state.body.velocity.y).toBe(JUMP_VEL + 15);
   });
 });
 
+// Leads in these tests are measured to the landing step L, the first step
+// whose resolve sets grounded. The buffered jump can never fire on L itself:
+// coyote steps are written in phase 8 from L's own resolve, so the earliest
+// firing step is L+1. A press with lead 6 (step L-6) reaches the firing step
+// L+1 exactly JUMP_BUFFER_STEPS decrements later and fires; lead 7 is one
+// decrement past and refuses. Measured to the firing step instead, this is
+// the sub-plan's window [P, P+7]: lead 6 fires at P+7, the last step of the
+// window, and lead 7 would need P+8.
 describe('stepController - jump buffering', () => {
   it('fires a jump buffered 6 real steps before an actual landing', () => {
     const grid = parseGrid(['...', '...', '###']);
@@ -228,6 +238,7 @@ describe('stepController - jump buffering', () => {
     const grid = parseGrid(['...', '...', '###']);
     const noJump = actions();
     const landingStep = stepsUntilGrounded(grid);
+    expect(landingStep).toBeGreaterThan(7);
 
     let state = createControllerState(makeBody({ x: 0, y: 0 }));
     for (let step = 1; step <= landingStep; step++) {
@@ -239,19 +250,15 @@ describe('stepController - jump buffering', () => {
     expect(state.body.velocity.y).toBe(0);
 
     state = stepController(state, actions({ jumpHeld: true }), grid, DT);
-    expect(state.body.velocity.y).not.toBe(JUMP_VEL);
+    // The resolve re-grounds the resting body and zeroes the post-gravity vy.
+    expect(state.body.velocity.y).toBe(0);
   });
 
   it('fires a jump buffered a few steps before an actual landing, on the frame after landing', () => {
     const grid = parseGrid(['...', '...', '###']);
     const noJump = actions();
 
-    let probe = createControllerState(makeBody({ x: 0, y: 0 }));
-    let landingStep = 0;
-    while (!probe.body.grounded) {
-      probe = stepController(probe, noJump, grid, DT);
-      landingStep++;
-    }
+    const landingStep = stepsUntilGrounded(grid);
     expect(landingStep).toBeGreaterThan(3);
 
     let state = createControllerState(makeBody({ x: 0, y: 0 }));
@@ -346,6 +353,7 @@ describe('stepController - variable jump height', () => {
     expect(state.body.velocity.y).toBe(JUMP_VEL);
 
     state = stepController(state, actions({ jumpPressed: true, jumpHeld: true }), grid, DT);
-    expect(state.body.velocity.y).not.toBe(JUMP_VEL);
+    // Same derivation as above: one step of gravity on the first impulse, not a re-fired impulse.
+    expect(state.body.velocity.y).toBe(JUMP_VEL + 15);
   });
 });

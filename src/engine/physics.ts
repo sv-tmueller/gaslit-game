@@ -44,14 +44,15 @@ export function tileAt(grid: TileGrid, col: number, row: number): Tile {
   return grid.tiles[row * grid.cols + col] ?? Tile.Empty;
 }
 
-// Inclusive tile span covered by a span [pos, pos + size). Using
-// ceil(end / TILE_SIZE) - 1 (rather than the naive floor(end / TILE_SIZE))
-// keeps a box whose far edge lands exactly on a tile boundary from being
-// counted as occupying the next tile over.
+// Inclusive first tile of the span.
 function spanStart(pos: number): number {
   return Math.floor(pos / TILE_SIZE);
 }
 
+// Inclusive last tile of a span [pos, pos + size). Using
+// ceil(end / TILE_SIZE) - 1 (rather than the naive floor(end / TILE_SIZE))
+// keeps a box whose far edge lands exactly on a tile boundary from being
+// counted as occupying the next tile over.
 function spanEnd(pos: number, size: number): number {
   return Math.ceil((pos + size) / TILE_SIZE) - 1;
 }
@@ -138,6 +139,9 @@ function resolveY(
   return { y, vy: resolvedVy, hitCeiling, grounded };
 }
 
+// With velocity.y === 0 the downward probe row is the body's own bottom row,
+// so a resting body reports grounded: false; callers must apply gravity
+// first (stepController guarantees vy >= 15).
 export function moveAndCollide(body: Body, grid: TileGrid, dt: number): CollisionResult {
   const xResult = resolveX(body, grid, dt);
   const bodyAfterX: Body = {
