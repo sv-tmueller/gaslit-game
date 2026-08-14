@@ -4,7 +4,10 @@ export type PrngState = number;
 export interface Prng {
   /** Next float in [0, 1). */
   next(): number;
-  /** Next integer in [min, max], both ends inclusive. */
+  /**
+   * Next integer in [min, max], both ends inclusive.
+   * Requires min <= max; behavior is unspecified otherwise.
+   */
   int(min: number, max: number): number;
   /** Picks a uniformly random element. Throws on an empty array. */
   choice<T>(items: readonly T[]): T;
@@ -21,7 +24,7 @@ export function createPrng(seed: number): Prng {
   let state = seed >>> 0;
 
   function next(): number {
-    state = (state + 0x6d2b79f5) | 0;
+    state = (state + 0x6d2b79f5) >>> 0;
     let t = state;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);

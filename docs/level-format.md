@@ -155,9 +155,11 @@ A few more codes exist beyond this table for completeness (`not-an-object`,
 `bad-name`, `spawn-out-of-bounds`), following the same naming and message
 conventions, plus `duplicate-trap-id`: two traps sharing an `id` produce a
 single error at the path of the second (or any later) offending entry, for
-example `traps[1].id`. So is `bad-tile-layer`, produced by a wrong-length or
+example `traps[1].id`. `bad-tile-layer` is produced by a wrong-length or
 non-string tile row (path `tiles[r]`), distinct from `unknown-tile`, which
-fires per offending character once the row shape is valid.
+fires per offending character once the row shape is valid. It also fires
+at path `tiles` when the tile layer is missing, not an array, or has the
+wrong row count, before any individual row is examined.
 
 Note the off-by-one in row four of the table: `cols: 20` means column `20`
 is the first invalid index, so `exit.col: 20` is out of bounds against a
