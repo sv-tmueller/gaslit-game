@@ -53,6 +53,7 @@ export interface WorldState {
   playerBody: Body;
   playerPrevGrounded: boolean;
   exitReached: boolean;
+  exitPos: TilePosition;          // mutable, fake-exit trap can move it
   firedTrapIds: string[];        // traps that fired this step (cleared each step)
 }
 

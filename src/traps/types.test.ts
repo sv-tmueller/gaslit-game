@@ -96,6 +96,7 @@ describe('WorldState', () => {
       playerBody: body,
       playerPrevGrounded: false,
       exitReached: false,
+      exitPos: { col: 0, row: 0 },
       firedTrapIds: [],
     };
     expect(world.tiles).toHaveLength(4);

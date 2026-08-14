@@ -46,6 +46,7 @@ export function createRuntime(level: LevelData, initialBody: Body): TrapRuntime 
     playerBody: initialBody,
     playerPrevGrounded: false,
     exitReached: false,
+    exitPos: { ...level.exit },
     firedTrapIds: [],
   };
 
@@ -118,6 +119,7 @@ export function resetTraps(runtime: TrapRuntime, body: Body): TrapRuntime {
   runtime.world.playerBody = body;
   runtime.world.playerPrevGrounded = false;
   runtime.world.exitReached = false;
+  runtime.world.exitPos = { ...runtime.level.exit };
   runtime.world.firedTrapIds = [];
 
   return runtime;
