@@ -1,45 +1,105 @@
+import atlasManifest from '../assets/atlas.json';
+import type { AtlasManifest } from './render/atlas';
+import { loadAtlas } from './render/atlas-loader';
+import type { BlitContext } from './render/batcher';
 import { BASE_HEIGHT, BASE_WIDTH, computeCanvasLayout } from './scale';
-import { PALETTE } from './render/palette';
+import { attachKeyboardInput, createKeyboardInput } from './engine/input';
+import { createLoop, createRafTicker } from './engine/loop';
+import { FIXTURE_SOURCES } from './levels/fixtures';
+import { createGame, renderGame, stepGame, type GameState } from './game/integration';
 
-// Placeholder fill until game logic exists; proves the deploy pipeline end to end.
-const PLACEHOLDER_COLOR = PALETTE.void;
+const SOURCES = [
+  FIXTURE_SOURCES['corridor'],
+  FIXTURE_SOURCES['jump-gap'],
+  FIXTURE_SOURCES['shaft'],
+];
 
-function bootstrap(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
-  // Offscreen backbuffer at the fixed internal resolution; the visible canvas is
-  // an integer-scaled blit of this, which keeps scaling logic in one place.
+async function loadAtlasBitmap(): Promise<ImageBitmap> {
+  const url = new URL('../assets/atlas.png', import.meta.url);
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return createImageBitmap(blob);
+}
+
+function bootstrap(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  atlasBitmap: ImageBitmap,
+): void {
+  const manifest = atlasManifest as unknown as AtlasManifest;
+  const atlas = loadAtlas(manifest, atlasBitmap);
+
+  // Backbuffer at the fixed internal resolution; the visible canvas is an
+  // integer-scaled blit of this, keeping scaling logic in one place.
   const backbuffer = document.createElement('canvas');
   backbuffer.width = BASE_WIDTH;
   backbuffer.height = BASE_HEIGHT;
 
-  const backCtx = backbuffer.getContext('2d');
-  if (!backCtx) {
+  const backCtxRaw = backbuffer.getContext('2d');
+  if (!backCtxRaw) {
     throw new Error('2d context unavailable on the backbuffer');
   }
+  // Adapt CanvasRenderingContext2D to the narrower BlitContext interface.
+  // fillStyle is wider on the DOM type (string | CanvasGradient | CanvasPattern),
+  // so assignments from BlitContext's string-typed fillStyle are safe but
+  // require erasing the union for assignment-compatibility.
+  const backCtx: BlitContext = backCtxRaw as unknown as BlitContext;
 
-  backCtx.fillStyle = PLACEHOLDER_COLOR;
-  backCtx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+  const input = createKeyboardInput();
+  attachKeyboardInput(input, window);
 
-  function render(): void {
-    const layout = computeCanvasLayout({
-      width: window.innerWidth,
-      height: window.innerHeight,
-      devicePixelRatio: window.devicePixelRatio,
-    });
+  let game: GameState = createGame({ sources: SOURCES, atlas }, input);
 
-    canvas.width = layout.deviceWidth;
-    canvas.height = layout.deviceHeight;
-    canvas.style.width = `${layout.cssWidth}px`;
-    canvas.style.height = `${layout.cssHeight}px`;
-    canvas.style.left = `${layout.offsetX}px`;
-    canvas.style.top = `${layout.offsetY}px`;
+  let paused = false;
 
-    // Must be reset after every resize since changing canvas.width/height resets the context.
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(backbuffer, 0, 0, canvas.width, canvas.height);
-  }
+  const loop = createLoop(
+    {
+      step: (dt) => {
+        if (paused) return;
+        game = stepGame(game, dt);
+      },
+      render: (alpha) => {
+        renderGame(game, backCtx, alpha);
 
-  render();
-  window.addEventListener('resize', render);
+        const layout = computeCanvasLayout({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          devicePixelRatio: window.devicePixelRatio,
+        });
+
+        canvas.width = layout.deviceWidth;
+        canvas.height = layout.deviceHeight;
+        canvas.style.width = `${layout.cssWidth}px`;
+        canvas.style.height = `${layout.cssHeight}px`;
+        canvas.style.left = `${layout.offsetX}px`;
+        canvas.style.top = `${layout.offsetY}px`;
+
+        // Reset after every resize since changing canvas.width/height clears the context.
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(backbuffer, 0, 0, canvas.width, canvas.height);
+      },
+    },
+    createRafTicker(),
+  );
+
+  // Toggle pause on the pause key. The loop itself has pause/resume, but
+  // we gate stepping locally so the render still fires and the last frame
+  // stays visible.
+  window.addEventListener('keydown', (event: KeyboardEvent) => {
+    if (event.code === 'KeyP' || event.code === 'Escape') {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      paused = !paused;
+      if (paused) {
+        loop.pause();
+      } else {
+        loop.resume();
+      }
+    }
+  });
+
+  // Resize handling: the render callback recomputes layout every rAF frame,
+  // so resizing is inherently covered. No explicit listener is needed.
+  loop.start();
 }
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
@@ -52,4 +112,8 @@ if (!ctx) {
   throw new Error('2d context unavailable on #game-canvas');
 }
 
-bootstrap(canvas, ctx);
+loadAtlasBitmap()
+  .then((bitmap) => bootstrap(canvas, ctx, bitmap))
+  .catch((err: unknown) => {
+    console.error('Failed to load atlas bitmap:', err);
+  });
