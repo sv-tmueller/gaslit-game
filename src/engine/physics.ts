@@ -139,6 +139,22 @@ function resolveY(
   return { y, vy: resolvedVy, hitCeiling, grounded };
 }
 
+/**
+ * Standard AABB intersection with STRICT inequalities: flush edges (equality)
+ * read as NO overlap. Consistent with overlapsHazard in levelAdapter.ts and
+ * the physics solver's spanEnd convention (ceil(end / TILE_SIZE) - 1) which
+ * excludes the far-edge-aligned tile, so bodies standing exactly adjacent do
+ * not register a spurious contact.
+ */
+export function aabbOverlap(a: AABB, b: AABB): boolean {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
 // With velocity.y === 0 the downward probe row is the body's own bottom row,
 // so a resting body reports grounded: false; callers must apply gravity
 // first (stepController guarantees vy >= 15).
