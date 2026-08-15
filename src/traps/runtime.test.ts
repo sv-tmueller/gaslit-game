@@ -12,6 +12,7 @@ import {
   resetTraps,
   stepTraps,
 } from './runtime';
+import { registerEmergingSpikes } from './implementations/emerging-spikes';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -394,5 +395,113 @@ describe('resetTraps - re-armable', () => {
     expect(rt.world.hazards.length).toBe(initialHazardCount);
     expect(rt.world.tiles).toEqual(initialTiles);
     expect(rt.world.dynamicSolids).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Multi-step trap animation through the runtime
+// ---------------------------------------------------------------------------
+
+describe('stepTraps - multi-step animation', () => {
+  it('emerging-spikes fully extends over extendSteps via the animation pass', () => {
+    // Register the REAL emerging-spikes factory (not a test stub) so the
+    // runtime exercises its multi-step apply() state machine.
+    registerEmergingSpikes();
+
+    // Level with a floor spike at col 1, row 1. extendSteps=4, no repeat.
+    const level = makeLevel({
+      cols: 4,
+      rows: 3,
+      traps: [
+        {
+          id: 'anim-spike',
+          type: 'emerging-spikes',
+          trigger: 'on-enter',
+          params: {
+            surface: 'floor',
+            col: 1,
+            row: 1,
+            extendSteps: 4,
+            repeats: false,
+          },
+        },
+      ],
+    });
+
+    const rt = createRuntime(level, makeBody());
+
+    // Place the player inside the spike tile so on-enter triggers immediately.
+    // Spike at (1,1) = pixels (16,16)-(32,32). Player overlapping at (16,16).
+    const bodyInSpike = makeBody(16, 16, false);
+
+    // Step 0: trap fires (Phase 1), apply called once. Spike begins extending.
+    // With extendSteps=4, first apply sets progress=1, fraction=0.25, height=4.
+    stepTraps(rt, bodyInSpike, false, false, 0);
+    expect(rt.traps[0]?.fired).toBe(true);
+    expect(rt.world.hazards).toHaveLength(1);
+    expect(rt.world.hazards[0]?.height).toBe(4);
+
+    // Steps 1-3: animation pass calls apply() each step, growing the spike.
+    stepTraps(rt, bodyInSpike, false, false, 1);
+    expect(rt.world.hazards[0]?.height).toBe(8);
+
+    stepTraps(rt, bodyInSpike, false, false, 2);
+    expect(rt.world.hazards[0]?.height).toBe(12);
+
+    stepTraps(rt, bodyInSpike, false, false, 3);
+    expect(rt.world.hazards[0]?.height).toBe(16);
+
+    // Step 4: fully extended, non-repeating. Height stays at 16 (phase=extended).
+    stepTraps(rt, bodyInSpike, false, false, 4);
+    expect(rt.world.hazards[0]?.height).toBe(16);
+
+    // firedTrapIds should only contain the id once (no re-firing).
+    expect(rt.world.firedTrapIds).toEqual([]);
+  });
+
+  it('emerging-spikes with repeats retracts and re-arms cyclically', () => {
+    registerEmergingSpikes();
+
+    const level = makeLevel({
+      cols: 4,
+      rows: 3,
+      traps: [
+        {
+          id: 'cycle-spike',
+          type: 'emerging-spikes',
+          trigger: 'on-enter',
+          params: {
+            surface: 'floor',
+            col: 1,
+            row: 1,
+            extendSteps: 2,
+            retractSteps: 2,
+            repeats: true,
+          },
+        },
+      ],
+    });
+
+    const rt = createRuntime(level, makeBody(16, 16, false));
+
+    // Extend: steps 0-1.
+    stepTraps(rt, rt.world.playerBody, false, false, 0);
+    expect(rt.world.hazards[0]?.height).toBe(8);
+    stepTraps(rt, rt.world.playerBody, false, false, 1);
+    expect(rt.world.hazards[0]?.height).toBe(16);
+
+    // Retract: steps 2-3.
+    stepTraps(rt, rt.world.playerBody, false, false, 2);
+    expect(rt.world.hazards[0]?.height).toBe(8);
+    stepTraps(rt, rt.world.playerBody, false, false, 3);
+    // Fully retracted: hazard removed.
+    expect(rt.world.hazards.length === 0 || rt.world.hazards[0]?.height === 0).toBe(true);
+
+    // Re-extend: steps 4-5 (cycle restarts).
+    stepTraps(rt, rt.world.playerBody, false, false, 4);
+    expect(rt.world.hazards).toHaveLength(1);
+    expect(rt.world.hazards[0]?.height).toBe(8);
+    stepTraps(rt, rt.world.playerBody, false, false, 5);
+    expect(rt.world.hazards[0]?.height).toBe(16);
   });
 });
