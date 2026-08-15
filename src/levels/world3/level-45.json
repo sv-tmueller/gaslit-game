@@ -1,0 +1,165 @@
+{
+  "name": "world-3-finale",
+  "cols": 20,
+  "rows": 24,
+  "spawn": {
+    "col": 2,
+    "row": 21
+  },
+  "exit": {
+    "col": 17,
+    "row": 1
+  },
+  "tiles": [
+    "11111111111111111111",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000011001",
+    "10000000000000000001",
+    "10000110000000110001",
+    "10000000000000000001",
+    "10001111001100110001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000011100000001",
+    "10000000000000000001",
+    "10002200000000220001",
+    "10000000000000000001",
+    "10000003300033000001",
+    "10000000000000000001",
+    "10000001000001000001",
+    "10000001000001000001",
+    "10000001000001000001",
+    "10000001003001000001",
+    "10000001003001000001",
+    "11111111111111111111",
+    "11111111111111111111"
+  ],
+  "traps": [
+    {
+      "id": "bot-crush",
+      "type": "crusher",
+      "trigger": "on-enter",
+      "params": {
+        "col": 7,
+        "row": 12,
+        "width": 2,
+        "height": 2,
+        "dropDistance": 48,
+        "dropSpeed": 3
+      }
+    },
+    {
+      "id": "bot-wall",
+      "type": "shifting-wall",
+      "trigger": "on-approach",
+      "params": {
+        "col": 13,
+        "row": 21,
+        "direction": "up",
+        "distance": 64,
+        "speed": 2
+      }
+    },
+    {
+      "id": "mid-spikes",
+      "type": "emerging-spikes",
+      "trigger": "on-enter",
+      "params": {
+        "surface": "floor",
+        "col": 10,
+        "row": 14,
+        "extendSteps": 6,
+        "retractSteps": 12,
+        "repeats": true
+      }
+    },
+    {
+      "id": "mid-vanish",
+      "type": "vanishing-floor",
+      "trigger": "on-land",
+      "params": {
+        "tiles": [
+          {
+            "col": 10,
+            "row": 11
+          }
+        ],
+        "delaySteps": 8,
+        "returns": false
+      }
+    },
+    {
+      "id": "upper-fake-exit",
+      "type": "fake-exit",
+      "trigger": "on-approach",
+      "params": {
+        "escapeCol": 2,
+        "escapeRow": 1,
+        "triggerDist": 48,
+        "speed": 2
+      }
+    },
+    {
+      "id": "upper-spikes",
+      "type": "emerging-spikes",
+      "trigger": "on-approach",
+      "params": {
+        "surface": "floor",
+        "col": 10,
+        "row": 6,
+        "extendSteps": 5,
+        "retractSteps": 10,
+        "repeats": true,
+        "distance": 48
+      }
+    }
+  ],
+  "mutations": [
+    {
+      "attempt": 2,
+      "deltas": [
+        {
+          "kind": "resize-gap",
+          "fromCol": 7,
+          "toCol": 9,
+          "gapRow": 16,
+          "gapTile": 0
+        }
+      ]
+    },
+    {
+      "attempt": 3,
+      "deltas": [
+        {
+          "kind": "move-exit",
+          "exitCol": 2,
+          "exitRow": 1
+        }
+      ]
+    },
+    {
+      "attempt": 4,
+      "deltas": [
+        {
+          "kind": "swap-trigger",
+          "trapId": "mid-spikes",
+          "trigger": "on-timer"
+        },
+        {
+          "kind": "set-tile",
+          "col": 10,
+          "row": 8,
+          "tile": 1
+        },
+        {
+          "kind": "set-tile",
+          "col": 11,
+          "row": 8,
+          "tile": 1
+        }
+      ]
+    }
+  ]
+}

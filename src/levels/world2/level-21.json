@@ -1,0 +1,68 @@
+{
+  "name": "detonation",
+  "cols": 20,
+  "rows": 12,
+  "spawn": {
+    "col": 2,
+    "row": 9
+  },
+  "exit": {
+    "col": 17,
+    "row": 9
+  },
+  "tiles": [
+    "11111111111111111111",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000020002000200001",
+    "11111111111111111111",
+    "11111111111111111111"
+  ],
+  "traps": [
+    {
+      "id": "crush-a",
+      "type": "crusher",
+      "trigger": "on-enter",
+      "params": {
+        "col": 5,
+        "row": 1,
+        "width": 2,
+        "height": 2,
+        "dropDistance": 80,
+        "dropSpeed": 4
+      }
+    },
+    {
+      "id": "crush-b",
+      "type": "crusher",
+      "trigger": "on-enter",
+      "params": {
+        "col": 10,
+        "row": 1,
+        "width": 2,
+        "height": 2,
+        "dropDistance": 80,
+        "dropSpeed": 4
+      }
+    },
+    {
+      "id": "crush-c",
+      "type": "crusher",
+      "trigger": "on-enter",
+      "params": {
+        "col": 14,
+        "row": 1,
+        "width": 2,
+        "height": 2,
+        "dropDistance": 80,
+        "dropSpeed": 4
+      }
+    }
+  ]
+}

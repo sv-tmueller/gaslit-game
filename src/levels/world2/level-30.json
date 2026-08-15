@@ -1,0 +1,121 @@
+{
+  "name": "world-2-finale",
+  "cols": 20,
+  "rows": 24,
+  "spawn": {
+    "col": 2,
+    "row": 21
+  },
+  "exit": {
+    "col": 17,
+    "row": 1
+  },
+  "tiles": [
+    "11111111111111111111",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000011001",
+    "10000000000000000001",
+    "10001111001100110001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000220000000220001",
+    "10000000003000000001",
+    "10000000003000000001",
+    "10000000100001000001",
+    "10000000100001000001",
+    "10000000100001000001",
+    "10000000100001000001",
+    "10000000100001000001",
+    "11111111111111111111",
+    "11111111111111111111"
+  ],
+  "traps": [
+    {
+      "id": "bottom-crush",
+      "type": "crusher",
+      "trigger": "on-enter",
+      "params": {
+        "col": 8,
+        "row": 12,
+        "width": 2,
+        "height": 2,
+        "dropDistance": 48,
+        "dropSpeed": 3
+      }
+    },
+    {
+      "id": "right-wall",
+      "type": "shifting-wall",
+      "trigger": "on-approach",
+      "params": {
+        "col": 13,
+        "row": 21,
+        "direction": "up",
+        "distance": 64,
+        "speed": 2
+      }
+    },
+    {
+      "id": "mid-spikes",
+      "type": "emerging-spikes",
+      "trigger": "on-enter",
+      "params": {
+        "surface": "floor",
+        "col": 10,
+        "row": 14,
+        "extendSteps": 6,
+        "retractSteps": 12,
+        "repeats": true
+      }
+    },
+    {
+      "id": "fleeing-exit",
+      "type": "fake-exit",
+      "trigger": "on-approach",
+      "params": {
+        "escapeCol": 2,
+        "escapeRow": 1,
+        "triggerDist": 48,
+        "speed": 2
+      }
+    }
+  ],
+  "mutations": [
+    {
+      "attempt": 3,
+      "deltas": [
+        {
+          "kind": "set-tile",
+          "col": 10,
+          "row": 10,
+          "tile": 1
+        },
+        {
+          "kind": "set-tile",
+          "col": 11,
+          "row": 10,
+          "tile": 1
+        },
+        {
+          "kind": "set-tile",
+          "col": 10,
+          "row": 11,
+          "tile": 1
+        },
+        {
+          "kind": "set-tile",
+          "col": 11,
+          "row": 11,
+          "tile": 1
+        }
+      ]
+    }
+  ]
+}

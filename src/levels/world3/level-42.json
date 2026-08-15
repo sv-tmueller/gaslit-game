@@ -1,0 +1,57 @@
+{
+  "name": "perception",
+  "cols": 20,
+  "rows": 12,
+  "spawn": {
+    "col": 2,
+    "row": 9
+  },
+  "exit": {
+    "col": 17,
+    "row": 7
+  },
+  "tiles": [
+    "11111111111111111111",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000001100001100001",
+    "10000000000000000001",
+    "10001100001100001001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "11111131131131131111",
+    "11111111111111111111"
+  ],
+  "traps": [
+    {
+      "id": "perc-spikes-a",
+      "type": "emerging-spikes",
+      "trigger": "on-approach",
+      "params": {
+        "surface": "floor",
+        "col": 6,
+        "row": 9,
+        "extendSteps": 4,
+        "retractSteps": 8,
+        "repeats": true,
+        "distance": 32
+      }
+    },
+    {
+      "id": "perc-spikes-b",
+      "type": "emerging-spikes",
+      "trigger": "on-approach",
+      "params": {
+        "surface": "floor",
+        "col": 12,
+        "row": 9,
+        "extendSteps": 4,
+        "retractSteps": 8,
+        "repeats": true,
+        "distance": 32
+      }
+    }
+  ]
+}
