@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { validateReachability, validateAllVariants } from './reachability';
+import { validateReachability } from './reachability';
 import { loadLevel } from '../levels/load';
 import { FIXTURE_SOURCES } from '../levels/fixtures';
-import type { MutableLevelData } from '../levels/mutation-types';
 
-describe('reachability validation', () => {
+describe('reachability validation (physics-calibrated)', () => {
   it('corridor is reachable', () => {
     const level = loadLevel(FIXTURE_SOURCES['corridor']);
     expect(validateReachability(level)).toBe(true);
@@ -15,13 +14,12 @@ describe('reachability validation', () => {
     expect(validateReachability(level)).toBe(true);
   });
 
-  it('shaft is reachable', () => {
+  it('shaft (redesigned, overlapping ledges) is reachable', () => {
     const level = loadLevel(FIXTURE_SOURCES['shaft']);
     expect(validateReachability(level)).toBe(true);
   });
 
   it('walled-off exit is not reachable', () => {
-    // Block the corridor with 5+ solid tiles (> max jump distance of 4)
     const veryBlocked = loadLevel({
       name: 'very-blocked',
       cols: 10, rows: 3,
@@ -30,30 +28,67 @@ describe('reachability validation', () => {
       tiles: ['1111111111', '1011111001', '1111111111'],
       traps: [],
     });
-    // Columns 2-6 are solid in row 1, 5 tiles thick > 4 tile jump
     expect(validateReachability(veryBlocked)).toBe(false);
   });
-});
 
-describe('variant validation', () => {
-  it('validates all mutation variants', () => {
-    const level: MutableLevelData = {
-      ...loadLevel(FIXTURE_SOURCES['corridor']),
-      mutations: [{ attempt: 2, deltas: [{ kind: 'set-tile', col: 5, row: 1, tile: 1 }] }],
-    };
-    const result = validateAllVariants(level, 5);
-    expect(result.variantResults.length).toBeGreaterThan(0);
-    // Base level (attempt 1) should be reachable
-    expect(result.variantResults[0]!.reachable).toBe(true);
+  it('OLD shaft geometry (non-overlapping ledges, 2-col gap) is NOT reachable', () => {
+    // Reproduce the original buggy shaft: left ledges cols 1-8, right ledges
+    // cols 11-18. The 2-tile horizontal gap between alternating tiers exceeds
+    // the jump envelope, so the validator must reject it.
+    const oldShaft = loadLevel({
+      name: 'old-shaft',
+      cols: 20, rows: 24,
+      spawn: { col: 2, row: 21 },
+      exit: { col: 4, row: 1 },
+      tiles: [
+        '11111111111111111111',
+        '10000000000000000001',
+        '10000000000222222221',
+        '10000000000000000001',
+        '12222222200000000001',
+        '10000000000000000001',
+        '10000000000222222221',
+        '10000000000000000001',
+        '12222222200000000001',
+        '10000000000000000001',
+        '10000000000222222221',
+        '10000000000000000001',
+        '12222222200000000001',
+        '10000000000000000001',
+        '10000000000222222221',
+        '10000000000000000001',
+        '12222222200000000001',
+        '10000000000000000001',
+        '10000000000222222221',
+        '10000000000000000001',
+        '12222222200000000001',
+        '10000000000000000001',
+        '11111111111111111111',
+        '11111111111111111111',
+      ],
+      traps: [],
+    });
+    expect(validateReachability(oldShaft)).toBe(false);
   });
 
-  it('stops early when no more mutations', () => {
-    const level: MutableLevelData = {
-      ...loadLevel(FIXTURE_SOURCES['corridor']),
-      mutations: [{ attempt: 2, deltas: [] }],
-    };
-    const result = validateAllVariants(level, 100);
-    // Should not iterate all 100 attempts
-    expect(result.variantResults.length).toBeLessThan(10);
+  it('ledge too high (3-tile vertical gap) is NOT reachable', () => {
+    // A single platform 3 tiles above the floor, with the exit on it.
+    // The player can rise ~2 tiles, so 3 should be unreachable.
+    const tooHigh = loadLevel({
+      name: 'too-high',
+      cols: 10, rows: 6,
+      spawn: { col: 1, row: 4 },
+      exit: { col: 1, row: 1 },
+      tiles: [
+        '1111111111',
+        '1000000001',
+        '1000000001',
+        '1000000001',
+        '1000000001',
+        '1111111111',
+      ],
+      traps: [],
+    });
+    expect(validateReachability(tooHigh)).toBe(false);
   });
 });

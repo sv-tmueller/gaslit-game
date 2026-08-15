@@ -182,8 +182,10 @@ import it from `src/levels/fixtures` directly.
   exercise the trap path.
 - **`shaft.json`**, 20 x 24 (320 x 384 px, just over two screens tall).
   Solid perimeter, floor at row 22. Ten one-way ledges (id 2) at rows 20,
-  18, 16, 14, 12, 10, 8, 6, 4, 2, alternating between columns 1 to 8 and
-  columns 11 to 18. Spawn `(2, 21)`, exit `(4, 1)`.
+  18, 16, 14, 12, 10, 8, 6, 4, 2, alternating between columns 1 to 10 and
+  columns 9 to 18 (a 2-column overlap at cols 9-10 so each tier is reachable
+  by a vertical jump through the one-way platform above). Spawn `(2, 21)`,
+  exit `(9, 1)`.
 
 Between them the three fixtures use all four tile ids: `corridor.json` and
 `jump-gap.json` cover empty, solid and hazard; `shaft.json` covers one-way.

@@ -41,7 +41,7 @@ describe('fixtures', () => {
     expect(level.cols).toBe(20);
     expect(level.rows).toBe(24);
     expect(level.spawn).toEqual({ col: 2, row: 21 });
-    expect(level.exit).toEqual({ col: 4, row: 1 });
+    expect(level.exit).toEqual({ col: 9, row: 1 });
   });
 
   it('uses all four tile ids across the three fixtures', () => {

@@ -5,13 +5,18 @@ import type { BlitContext } from './render/batcher';
 import { BASE_HEIGHT, BASE_WIDTH, computeCanvasLayout } from './scale';
 import { attachKeyboardInput, createKeyboardInput } from './engine/input';
 import { createLoop, createRafTicker } from './engine/loop';
-import { FIXTURE_SOURCES } from './levels/fixtures';
 import { createGame, renderGame, stepGame, type GameState } from './game/integration';
+import { MVP_LEVELS, MVP_SEQUENCE } from './levels/mvp';
+import { WORLD2_LEVELS, WORLD2_SEQUENCE } from './levels/world2';
+import { WORLD3_LEVELS, WORLD3_SEQUENCE } from './levels/world3';
 
-const SOURCES = [
-  FIXTURE_SOURCES['corridor'],
-  FIXTURE_SOURCES['jump-gap'],
-  FIXTURE_SOURCES['shaft'],
+// The full 45-level campaign: MVP (15) + World 2 (15) + World 3 (15),
+// played in authored order. Each sequence slug maps to its raw JSON source
+// in the corresponding level catalog.
+const SOURCES: readonly unknown[] = [
+  ...MVP_SEQUENCE.map((id) => MVP_LEVELS[id]),
+  ...WORLD2_SEQUENCE.map((id) => WORLD2_LEVELS[id]),
+  ...WORLD3_SEQUENCE.map((id) => WORLD3_LEVELS[id]),
 ];
 
 async function loadAtlasBitmap(): Promise<ImageBitmap> {
