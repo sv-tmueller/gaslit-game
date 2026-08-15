@@ -12,6 +12,7 @@ import {
   saveSave,
   updateLevelData,
 } from './repository';
+import { getDefaultSettings } from './repository';
 
 // ---------------------------------------------------------------------------
 // Helper: storage whose setItem throws (simulates quota exceeded)
@@ -47,8 +48,12 @@ describe('loadSave', () => {
             { x: 10, y: 20 },
             { x: 30, y: 40 },
           ],
+          completed: false,
+          unlocked: true,
         },
       },
+      settings: getDefaultSettings(),
+      currentPosition: 0,
     };
     saveSave(storage, original);
     const loaded = loadSave(storage);
@@ -74,7 +79,18 @@ describe('loadSave', () => {
     const storage = createMemoryStorage();
     storage.setItem(
       SAVE_KEY,
-      JSON.stringify({ version: 999, levels: { lvl1: { attemptCount: 1, deathCount: 0, deathPositions: [] } } }),
+      JSON.stringify({
+        version: 999,
+        levels: {
+          lvl1: {
+            attemptCount: 1,
+            deathCount: 0,
+            deathPositions: [],
+            completed: false,
+            unlocked: false,
+          },
+        },
+      }),
     );
     const payload = loadSave(storage);
     expect(payload.version).toBe(SAVE_SCHEMA_VERSION);
@@ -86,9 +102,17 @@ describe('loadSave', () => {
     const bad = {
       version: SAVE_SCHEMA_VERSION,
       levels: {
-        good: { attemptCount: 2, deathCount: 1, deathPositions: [{ x: 0, y: 0 }] },
+        good: {
+          attemptCount: 2,
+          deathCount: 1,
+          deathPositions: [{ x: 0, y: 0 }],
+          completed: false,
+          unlocked: true,
+        },
         bad: { attemptCount: 'oops', deathCount: 1, deathPositions: [] },
       },
+      settings: getDefaultSettings(),
+      currentPosition: 0,
     };
     storage.setItem(SAVE_KEY, JSON.stringify(bad));
     const payload = loadSave(storage);
@@ -116,7 +140,17 @@ describe('saveSave', () => {
     const storage = createQuotaExceedingStorage();
     const payload: SavePayload = {
       version: SAVE_SCHEMA_VERSION,
-      levels: { lvl1: { attemptCount: 1, deathCount: 0, deathPositions: [] } },
+      levels: {
+        lvl1: {
+          attemptCount: 1,
+          deathCount: 0,
+          deathPositions: [],
+          completed: false,
+          unlocked: false,
+        },
+      },
+      settings: getDefaultSettings(),
+      currentPosition: 0,
     };
     expect(() => saveSave(storage, payload)).not.toThrow();
   });
@@ -124,7 +158,12 @@ describe('saveSave', () => {
 
 describe('getLevelData', () => {
   it('returns zero-valued data for an unknown level id', () => {
-    const payload: SavePayload = { version: SAVE_SCHEMA_VERSION, levels: {} };
+    const payload: SavePayload = {
+      version: SAVE_SCHEMA_VERSION,
+      levels: {},
+      settings: getDefaultSettings(),
+      currentPosition: 0,
+    };
     const data = getLevelData(payload, 'nonexistent');
     expect(data.attemptCount).toBe(0);
     expect(data.deathCount).toBe(0);
@@ -136,12 +175,24 @@ describe('updateLevelData', () => {
   it('replaces existing level data', () => {
     const payload: SavePayload = {
       version: SAVE_SCHEMA_VERSION,
-      levels: { lvl1: { attemptCount: 1, deathCount: 0, deathPositions: [] } },
+      levels: {
+        lvl1: {
+          attemptCount: 1,
+          deathCount: 0,
+          deathPositions: [],
+          completed: false,
+          unlocked: false,
+        },
+      },
+      settings: getDefaultSettings(),
+      currentPosition: 0,
     };
     const updated = updateLevelData(payload, 'lvl1', {
       attemptCount: 10,
       deathCount: 5,
       deathPositions: [{ x: 1, y: 1 }],
+      completed: false,
+      unlocked: false,
     });
     expect(getLevelData(updated, 'lvl1').attemptCount).toBe(10);
   });
@@ -150,14 +201,30 @@ describe('updateLevelData', () => {
     const payload: SavePayload = {
       version: SAVE_SCHEMA_VERSION,
       levels: {
-        lvl1: { attemptCount: 1, deathCount: 0, deathPositions: [] },
-        lvl2: { attemptCount: 3, deathCount: 2, deathPositions: [{ x: 5, y: 5 }] },
+        lvl1: {
+          attemptCount: 1,
+          deathCount: 0,
+          deathPositions: [],
+          completed: false,
+          unlocked: false,
+        },
+        lvl2: {
+          attemptCount: 3,
+          deathCount: 2,
+          deathPositions: [{ x: 5, y: 5 }],
+          completed: false,
+          unlocked: false,
+        },
       },
+      settings: getDefaultSettings(),
+      currentPosition: 0,
     };
     const updated = updateLevelData(payload, 'lvl1', {
       attemptCount: 99,
       deathCount: 0,
       deathPositions: [],
+      completed: false,
+      unlocked: false,
     });
     expect(getLevelData(updated, 'lvl2').attemptCount).toBe(3);
     expect(getLevelData(updated, 'lvl1').attemptCount).toBe(99);
@@ -168,7 +235,17 @@ describe('recordAttempt', () => {
   it('increments attemptCount for an existing level', () => {
     const payload: SavePayload = {
       version: SAVE_SCHEMA_VERSION,
-      levels: { lvl1: { attemptCount: 5, deathCount: 2, deathPositions: [] } },
+      levels: {
+        lvl1: {
+          attemptCount: 5,
+          deathCount: 2,
+          deathPositions: [],
+          completed: false,
+          unlocked: false,
+        },
+      },
+      settings: getDefaultSettings(),
+      currentPosition: 0,
     };
     const updated = recordAttempt(payload, 'lvl1');
     expect(getLevelData(updated, 'lvl1').attemptCount).toBe(6);
@@ -176,7 +253,12 @@ describe('recordAttempt', () => {
   });
 
   it('starts from zero for a new level', () => {
-    const payload: SavePayload = { version: SAVE_SCHEMA_VERSION, levels: {} };
+    const payload: SavePayload = {
+      version: SAVE_SCHEMA_VERSION,
+      levels: {},
+      settings: getDefaultSettings(),
+      currentPosition: 0,
+    };
     const updated = recordAttempt(payload, 'new');
     expect(getLevelData(updated, 'new').attemptCount).toBe(1);
   });
@@ -186,16 +268,34 @@ describe('recordDeath', () => {
   it('increments deathCount and appends the position', () => {
     const payload: SavePayload = {
       version: SAVE_SCHEMA_VERSION,
-      levels: { lvl1: { attemptCount: 3, deathCount: 1, deathPositions: [{ x: 0, y: 0 }] } },
+      levels: {
+        lvl1: {
+          attemptCount: 3,
+          deathCount: 1,
+          deathPositions: [{ x: 0, y: 0 }],
+          completed: false,
+          unlocked: false,
+        },
+      },
+      settings: getDefaultSettings(),
+      currentPosition: 0,
     };
     const updated = recordDeath(payload, 'lvl1', { x: 16, y: 32 });
     const data = getLevelData(updated, 'lvl1');
     expect(data.deathCount).toBe(2);
-    expect(data.deathPositions).toEqual([{ x: 0, y: 0 }, { x: 16, y: 32 }]);
+    expect(data.deathPositions).toEqual([
+      { x: 0, y: 0 },
+      { x: 16, y: 32 },
+    ]);
   });
 
   it('starts from zero for a new level', () => {
-    const payload: SavePayload = { version: SAVE_SCHEMA_VERSION, levels: {} };
+    const payload: SavePayload = {
+      version: SAVE_SCHEMA_VERSION,
+      levels: {},
+      settings: getDefaultSettings(),
+      currentPosition: 0,
+    };
     const updated = recordDeath(payload, 'new', { x: 1, y: 2 });
     const data = getLevelData(updated, 'new');
     expect(data.deathCount).toBe(1);
@@ -203,7 +303,12 @@ describe('recordDeath', () => {
   });
 
   it('caps death positions at 100, dropping oldest', () => {
-    let payload: SavePayload = { version: SAVE_SCHEMA_VERSION, levels: {} };
+    let payload: SavePayload = {
+      version: SAVE_SCHEMA_VERSION,
+      levels: {},
+      settings: getDefaultSettings(),
+      currentPosition: 0,
+    };
     for (let i = 0; i < 105; i++) {
       payload = recordDeath(payload, 'lvl', { x: i, y: i });
     }
@@ -218,7 +323,12 @@ describe('recordDeath', () => {
 
 describe('multiple levels coexist independently', () => {
   it('records and retrieves data for distinct level ids', () => {
-    let payload: SavePayload = { version: SAVE_SCHEMA_VERSION, levels: {} };
+    let payload: SavePayload = {
+      version: SAVE_SCHEMA_VERSION,
+      levels: {},
+      settings: getDefaultSettings(),
+      currentPosition: 0,
+    };
     payload = recordAttempt(payload, 'lvl-a');
     payload = recordAttempt(payload, 'lvl-a');
     payload = recordDeath(payload, 'lvl-a', { x: 1, y: 1 });
@@ -233,12 +343,20 @@ describe('multiple levels coexist independently', () => {
     expect(a.deathCount).toBe(1);
     expect(b.attemptCount).toBe(1);
     expect(b.deathCount).toBe(2);
-    expect(b.deathPositions).toEqual([{ x: 2, y: 2 }, { x: 3, y: 3 }]);
+    expect(b.deathPositions).toEqual([
+      { x: 2, y: 2 },
+      { x: 3, y: 3 },
+    ]);
   });
 
   it('survives a full round-trip with multiple levels', () => {
     const storage = createMemoryStorage();
-    let payload: SavePayload = { version: SAVE_SCHEMA_VERSION, levels: {} };
+    let payload: SavePayload = {
+      version: SAVE_SCHEMA_VERSION,
+      levels: {},
+      settings: getDefaultSettings(),
+      currentPosition: 0,
+    };
     payload = recordAttempt(payload, 'lvl-a');
     payload = recordDeath(payload, 'lvl-a', { x: 10, y: 10 });
     payload = recordAttempt(payload, 'lvl-b');

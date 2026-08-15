@@ -3,8 +3,8 @@ import { SAVE_SCHEMA_VERSION } from './schema';
 import type { DeathPosition, LevelSaveData, SavePayload } from './schema';
 
 describe('SAVE_SCHEMA_VERSION', () => {
-  it('is 1', () => {
-    expect(SAVE_SCHEMA_VERSION).toBe(1);
+  it('is 2', () => {
+    expect(SAVE_SCHEMA_VERSION).toBe(2);
   });
 });
 
@@ -22,6 +22,8 @@ describe('LevelSaveData', () => {
       attemptCount: 3,
       deathCount: 2,
       deathPositions: [{ x: 1, y: 2 }],
+      completed: false,
+      unlocked: true,
     };
     expect(data.attemptCount).toBe(3);
     expect(data.deathCount).toBe(2);
@@ -33,6 +35,8 @@ describe('LevelSaveData', () => {
       attemptCount: 0,
       deathCount: 0,
       deathPositions: [],
+      completed: false,
+      unlocked: false,
     };
     expect(data.attemptCount).toBe(0);
     expect(data.deathCount).toBe(0);
@@ -45,7 +49,13 @@ describe('SavePayload', () => {
     const payload: SavePayload = {
       version: SAVE_SCHEMA_VERSION,
       levels: {
-        lvl1: { attemptCount: 1, deathCount: 0, deathPositions: [] },
+        lvl1: {
+          attemptCount: 1,
+          deathCount: 0,
+          deathPositions: [],
+          completed: false,
+          unlocked: true,
+        },
         lvl2: {
           attemptCount: 5,
           deathCount: 3,
@@ -53,15 +63,24 @@ describe('SavePayload', () => {
             { x: 0, y: 0 },
             { x: 16, y: 32 },
           ],
+          completed: true,
+          unlocked: true,
         },
       },
+      settings: { muted: false, reducedMotion: false },
+      currentPosition: 0,
     };
     expect(Object.keys(payload.levels)).toHaveLength(2);
     expect(payload.version).toBe(SAVE_SCHEMA_VERSION);
   });
 
   it('accepts an empty levels map', () => {
-    const payload: SavePayload = { version: SAVE_SCHEMA_VERSION, levels: {} };
+    const payload: SavePayload = {
+      version: SAVE_SCHEMA_VERSION,
+      levels: {},
+      settings: { muted: false, reducedMotion: false },
+      currentPosition: 0,
+    };
     expect(Object.keys(payload.levels)).toHaveLength(0);
   });
 });
