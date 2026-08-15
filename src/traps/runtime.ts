@@ -79,6 +79,10 @@ export function stepTraps(
   world.exitReached = exitReached;
   world.firedTrapIds = [];
 
+  // Phase 1: Evaluate triggers in fixed order. An unarmed or already-fired
+  // trap is skipped (a fired trap does not re-trigger). Newly firing traps
+  // mark themselves fired, apply their initial effect, and record their id.
+  const justFired = new Set<string>();
   for (const kind of TRIGGER_ORDER) {
     for (const trap of traps) {
       if (!trap.armed || trap.fired) continue;
@@ -87,7 +91,25 @@ export function stepTraps(
         trap.fired = true;
         trap.apply(world);
         world.firedTrapIds.push(trap.id);
+        justFired.add(trap.id);
       }
+    }
+  }
+
+  // Phase 2: Animation pass. Many traps (emerging-spikes, vanishing-floor,
+  // crusher, shifting-wall, fake-exit) have multi-step internal state
+  // machines in apply() that must be advanced every step after the initial
+  // trigger: spikes gradually extend, floors count down then vanish,
+  // crushers descend, walls slide, exits slide. Calling apply() on every
+  // fired trap each step drives those animations forward. This does NOT
+  // re-evaluate the trigger or re-record the id in firedTrapIds --- a trap
+  // fires exactly once per arm cycle (preserving the contract tested in
+  // runtime.test.ts "only fires each trap once per arm cycle"). Traps that
+  // just fired in Phase 1 already had apply() called once this step, so
+  // they are skipped here to avoid a double-application.
+  for (const trap of traps) {
+    if (trap.armed && trap.fired && !justFired.has(trap.id)) {
+      trap.apply(world);
     }
   }
 
