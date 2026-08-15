@@ -1,16 +1,11 @@
-import { aabbOverlap, type AABB, type TileGrid } from '../engine/physics';
+import { aabbOverlap, type AABB, type Body, Tile, type TileGrid } from '../engine/physics';
 import {
   createControllerState,
   stepController,
   type ControllerActions,
   type ControllerState,
 } from '../engine/controller';
-import {
-  collectHazards,
-  levelToGrid,
-  overlapsHazard,
-  type HazardRect,
-} from '../engine/levelAdapter';
+import { overlapsHazard } from '../engine/levelAdapter';
 import type { LevelData, TilePosition } from '../levels/types';
 import {
   DEATH_FREEZE_STEPS,
@@ -26,6 +21,12 @@ import {
   type LevelSequence,
   type LevelSource,
 } from './sequence';
+import { createRuntime, resetTraps, stepTraps, type TrapRuntime } from '../traps/runtime';
+import { registerAllTrapTypes } from '../traps/implementations';
+
+// Register every concrete trap factory once at module load so createRuntime
+// can resolve any trap type a level declares.
+registerAllTrapTypes();
 
 export type PlayPhase = 'playing' | 'dying' | 'entering' | 'complete';
 
@@ -42,8 +43,16 @@ export interface SceneState {
   readonly phase: PlayPhase;
   readonly controller: ControllerState;
   readonly level: LevelData;
-  readonly grid: TileGrid;
-  readonly hazards: readonly HazardRect[];
+  /**
+   * The trap runtime owns the mutable tile grid and hazard list that the
+   * controller and hazard check read from each step. Traps mutate this in
+   * place (vanishing floors clear tiles, emerging spikes add hazards); the
+   * scene carries the same runtime reference across steps so mutations
+   * persist. Reset on respawn and rebuilt on level advance.
+   */
+  readonly runtime: TrapRuntime;
+  /** Monotonically increasing sim step counter, fed to stepTraps. */
+  readonly step: number;
   readonly sequence: LevelSequence;
   /** Countdown steps for the dying or entering phases. */
   readonly timer: number;
@@ -64,13 +73,17 @@ function exitAABB(exit: TilePosition): AABB {
   return { x: exit.col * 16, y: exit.row * 16, width: 16, height: 16 };
 }
 
-function loadSeqLevel(seq: LevelSequence): {
+/**
+ * Loads the current level from the sequence and builds a fresh trap runtime
+ * for it. The runtime owns the mutable tile grid and hazard list.
+ */
+function loadSeqLevel(seq: LevelSequence, body: Body): {
   level: LevelData;
-  grid: TileGrid;
-  hazards: readonly HazardRect[];
+  runtime: TrapRuntime;
 } {
   const level = currentLevel(seq);
-  return { level, grid: levelToGrid(level), hazards: collectHazards(level) };
+  const runtime = createRuntime(level, body);
+  return { level, runtime };
 }
 
 function freshController(level: LevelData): ControllerState {
@@ -82,14 +95,15 @@ export function createScene(
   callbacks?: SceneCallbacks,
 ): SceneState {
   const sequence = createSequence(sources);
-  const { level, grid, hazards } = loadSeqLevel(sequence);
+  const controller = freshController(currentLevel(sequence));
+  const { level, runtime } = loadSeqLevel(sequence, controller.body);
 
   const state: SceneState = {
     phase: 'playing',
-    controller: freshController(level),
+    controller,
     level,
-    grid,
-    hazards,
+    runtime,
+    step: 0,
     sequence,
     timer: 0,
     deathsThisLevel: 0,
@@ -131,20 +145,43 @@ function stepPlaying(
     return next;
   }
 
-  // 2. Step the controller.
+  // 2. Step the controller using the runtime's mutable tile grid so trap-
+  //    induced tile changes (vanishing floors, shifting walls) are felt by
+  //    the physics solver immediately.
   const ctrlActions: ControllerActions = {
     left: actions.left,
     right: actions.right,
     jumpPressed: actions.jumpPressed,
     jumpHeld: actions.jumpHeld,
   };
-  const controller = stepController(state.controller, ctrlActions, state.grid, dt);
+  const grid: TileGrid = {
+    cols: state.runtime.world.cols,
+    rows: state.runtime.world.rows,
+    tiles: state.runtime.world.tiles as unknown as readonly Tile[],
+  };
+  const controller = stepController(state.controller, ctrlActions, grid, dt);
 
-  // 3. Hazard check (death wins over exit if both occur in the same step).
-  if (overlapsHazard(controller.body, state.hazards)) {
+  // 3. Advance the trap system: feed it the post-move body so triggers
+  //    (on-enter, on-approach, on-land) evaluate against the new position.
+  //    Traps mutate the runtime's world in place (adding hazards, vanishing
+  //    tiles, spawning dynamic solids).
+  const step = state.step + 1;
+  const prevGrounded = state.controller.body.grounded;
+  stepTraps(
+    state.runtime,
+    controller.body,
+    prevGrounded,
+    false,
+    step,
+  );
+
+  // 4. Hazard check (death wins over exit if both occur in the same step).
+  //    Uses the runtime's hazard list, which includes trap-added hazards.
+  if (overlapsHazard(controller.body, state.runtime.world.hazards)) {
     const next: SceneState = {
       ...state,
       controller,
+      step,
       phase: 'dying',
       timer: DEATH_FREEZE_STEPS,
       deathsThisLevel: state.deathsThisLevel + 1,
@@ -154,12 +191,13 @@ function stepPlaying(
     return next;
   }
 
-  // 4. Exit check.
+  // 5. Exit check.
   if (aabbOverlap(controller.body, exitAABB(state.level.exit))) {
     fireOnLevelComplete(state);
     const next: SceneState = {
       ...state,
       controller,
+      step,
       phase: 'entering',
       timer: EXIT_BEAT_STEPS,
     };
@@ -167,8 +205,8 @@ function stepPlaying(
     return next;
   }
 
-  // 5. Normal stepped state.
-  const next: SceneState = { ...state, controller };
+  // 6. Normal stepped state.
+  const next: SceneState = { ...state, controller, step };
   transferCallbacks(state, next);
   return next;
 }
@@ -180,10 +218,15 @@ function stepDying(state: SceneState): SceneState {
     return next;
   }
 
-  // Timer reached 0: respawn with a factory-fresh controller.
+  // Timer reached 0: respawn with a factory-fresh controller and re-armed
+  // traps. resetTraps rebuilds the world (tiles, hazards, dynamic solids)
+  // from the original level data so every trap starts exactly where it began.
+  const controller = freshController(state.level);
+  resetTraps(state.runtime, controller.body);
   const next: SceneState = {
     ...state,
-    controller: freshController(state.level),
+    controller,
+    step: 0,
     phase: 'playing',
     timer: 0,
   };
@@ -201,13 +244,14 @@ function stepEntering(state: SceneState): SceneState {
   // Timer reached 0: advance or complete.
   if (hasNext(state.sequence)) {
     const nextSeq = advance(state.sequence);
-    const { level, grid, hazards } = loadSeqLevel(nextSeq);
+    const controller = freshController(currentLevel(nextSeq));
+    const { level, runtime } = loadSeqLevel(nextSeq, controller.body);
     const next: SceneState = {
       ...state,
-      controller: freshController(level),
+      controller,
       level,
-      grid,
-      hazards,
+      runtime,
+      step: 0,
       sequence: nextSeq,
       phase: 'playing',
       timer: 0,
