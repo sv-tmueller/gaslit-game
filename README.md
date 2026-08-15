@@ -2,7 +2,7 @@
 
 A trap platformer where the level lies to you between attempts.
 
-[Play in your browser](https://pitfall.vercel.app) | [Source](https://github.com/sv-tmueller/pitfall)
+[Play in your browser](https://pitfall-fawn.vercel.app) | [Source](https://github.com/sv-tmueller/pitfall)
 
 ## What is this?
 
