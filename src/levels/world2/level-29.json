@@ -1,0 +1,57 @@
+{
+  "name": "timing",
+  "cols": 20,
+  "rows": 12,
+  "spawn": {
+    "col": 2,
+    "row": 9
+  },
+  "exit": {
+    "col": 17,
+    "row": 5
+  },
+  "tiles": [
+    "11111111111111111111",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000011000001",
+    "10000000000000000001",
+    "10000000110000001001",
+    "10000000000000000001",
+    "10001100000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "11111133113311331111",
+    "11111111111111111111"
+  ],
+  "traps": [
+    {
+      "id": "pit-spikes",
+      "type": "emerging-spikes",
+      "trigger": "on-approach",
+      "params": {
+        "surface": "floor",
+        "col": 10,
+        "row": 9,
+        "extendSteps": 6,
+        "retractSteps": 10,
+        "repeats": true,
+        "distance": 32
+      }
+    },
+    {
+      "id": "late-crusher",
+      "type": "crusher",
+      "trigger": "on-approach",
+      "params": {
+        "col": 14,
+        "row": 1,
+        "width": 2,
+        "height": 2,
+        "dropDistance": 48,
+        "dropSpeed": 4,
+        "distance": 48
+      }
+    }
+  ]
+}
