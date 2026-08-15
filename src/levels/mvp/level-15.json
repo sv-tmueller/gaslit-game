@@ -1,0 +1,134 @@
+{
+  "name": "finale",
+  "cols": 20,
+  "rows": 24,
+  "spawn": {
+    "col": 2,
+    "row": 21
+  },
+  "exit": {
+    "col": 17,
+    "row": 1
+  },
+  "tiles": [
+    "11111111111111111111",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10002200000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000333333000001",
+    "10000000111100000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000220001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "11111111111111111111",
+    "11111111111111111111"
+  ],
+  "traps": [
+    {
+      "id": "gaunt-1",
+      "type": "vanishing-floor",
+      "trigger": "on-land",
+      "params": {
+        "tiles": [
+          {
+            "col": 7,
+            "row": 10
+          },
+          {
+            "col": 8,
+            "row": 10
+          }
+        ],
+        "delaySteps": 5,
+        "returns": false
+      }
+    },
+    {
+      "id": "gaunt-2",
+      "type": "vanishing-floor",
+      "trigger": "on-land",
+      "params": {
+        "tiles": [
+          {
+            "col": 11,
+            "row": 10
+          },
+          {
+            "col": 12,
+            "row": 10
+          }
+        ],
+        "delaySteps": 5,
+        "returns": false
+      }
+    },
+    {
+      "id": "final-spikes",
+      "type": "emerging-spikes",
+      "trigger": "on-enter",
+      "params": {
+        "surface": "floor",
+        "col": 10,
+        "row": 12,
+        "extendSteps": 8,
+        "retractSteps": 12,
+        "repeats": true
+      }
+    },
+    {
+      "id": "final-fake-exit",
+      "type": "fake-exit",
+      "trigger": "on-approach",
+      "params": {
+        "escapeCol": 2,
+        "escapeRow": 1,
+        "triggerDist": 48,
+        "speed": 2
+      }
+    }
+  ],
+  "mutations": [
+    {
+      "attempt": 3,
+      "deltas": [
+        {
+          "kind": "set-tile",
+          "col": 10,
+          "row": 5,
+          "tile": 1
+        },
+        {
+          "kind": "set-tile",
+          "col": 10,
+          "row": 6,
+          "tile": 1
+        },
+        {
+          "kind": "set-tile",
+          "col": 10,
+          "row": 7,
+          "tile": 1
+        },
+        {
+          "kind": "set-tile",
+          "col": 10,
+          "row": 8,
+          "tile": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "name": "the-gauntlet",
+  "cols": 20,
+  "rows": 12,
+  "spawn": {
+    "col": 2,
+    "row": 9
+  },
+  "exit": {
+    "col": 17,
+    "row": 9
+  },
+  "tiles": [
+    "11111111111111111111",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "11111111111111111111",
+    "11111333333333311111"
+  ],
+  "traps": [
+    {
+      "id": "seg-1",
+      "type": "vanishing-floor",
+      "trigger": "on-land",
+      "params": {
+        "tiles": [
+          {
+            "col": 5,
+            "row": 10
+          },
+          {
+            "col": 6,
+            "row": 10
+          }
+        ],
+        "delaySteps": 5,
+        "returns": false
+      }
+    },
+    {
+      "id": "seg-2",
+      "type": "vanishing-floor",
+      "trigger": "on-land",
+      "params": {
+        "tiles": [
+          {
+            "col": 9,
+            "row": 10
+          },
+          {
+            "col": 10,
+            "row": 10
+          }
+        ],
+        "delaySteps": 5,
+        "returns": false
+      }
+    },
+    {
+      "id": "seg-3",
+      "type": "vanishing-floor",
+      "trigger": "on-land",
+      "params": {
+        "tiles": [
+          {
+            "col": 13,
+            "row": 10
+          },
+          {
+            "col": 14,
+            "row": 10
+          }
+        ],
+        "delaySteps": 5,
+        "returns": false
+      }
+    }
+  ]
+}

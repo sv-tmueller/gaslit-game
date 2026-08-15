@@ -1,0 +1,104 @@
+{
+  "name": "mutation-shift",
+  "cols": 20,
+  "rows": 12,
+  "spawn": {
+    "col": 2,
+    "row": 9
+  },
+  "exit": {
+    "col": 17,
+    "row": 9
+  },
+  "tiles": [
+    "11111111111111111111",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "10000022000000000001",
+    "10000022000000000001",
+    "10000000000000000001",
+    "10000000000000000001",
+    "11111111001111111111",
+    "11111111333111111111"
+  ],
+  "traps": [
+    {
+      "id": "vanish-pad",
+      "type": "vanishing-floor",
+      "trigger": "on-land",
+      "params": {
+        "tiles": [
+          {
+            "col": 8,
+            "row": 10
+          },
+          {
+            "col": 9,
+            "row": 10
+          }
+        ],
+        "delaySteps": 15,
+        "returns": true,
+        "returnDelaySteps": 30
+      }
+    }
+  ],
+  "mutations": [
+    {
+      "attempt": 3,
+      "deltas": [
+        {
+          "kind": "set-tile",
+          "col": 6,
+          "row": 6,
+          "tile": 0
+        },
+        {
+          "kind": "set-tile",
+          "col": 7,
+          "row": 6,
+          "tile": 0
+        },
+        {
+          "kind": "set-tile",
+          "col": 6,
+          "row": 7,
+          "tile": 0
+        },
+        {
+          "kind": "set-tile",
+          "col": 7,
+          "row": 7,
+          "tile": 0
+        },
+        {
+          "kind": "set-tile",
+          "col": 12,
+          "row": 6,
+          "tile": 2
+        },
+        {
+          "kind": "set-tile",
+          "col": 13,
+          "row": 6,
+          "tile": 2
+        },
+        {
+          "kind": "set-tile",
+          "col": 12,
+          "row": 7,
+          "tile": 2
+        },
+        {
+          "kind": "set-tile",
+          "col": 13,
+          "row": 7,
+          "tile": 2
+        }
+      ]
+    }
+  ]
+}
