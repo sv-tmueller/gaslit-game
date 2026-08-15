@@ -2,29 +2,40 @@
 
 A trap platformer where the level lies to you between attempts.
 
-This project is pre-alpha. There is no playable build and no public URL yet. Everything below describes what is being built and why, not a finished game.
+[Play in your browser](https://pitfall.vercel.app) | [Source](https://github.com/sv-tmueller/pitfall)
+
+## What is this?
+
+Pitfall is a trap platformer inspired by the genre popularized by *Level Devil*: short levels, instant death, and traps disguised as normal level geometry. The difference is that the level itself is not fixed. Between attempts, traps and level elements mutate, and the game denies that anything changed. You have to notice the mutation, not just react fast enough.
+
+Three guardrails keep it fair:
+
+1. Mutations apply at level start only. The level never changes under your feet mid-run.
+2. Every mutated element is on screen and readable before you can commit to it. The lie is about memory, never about reaction time.
+3. A mutation may never make a level unsolvable.
+
+## Features
+
+- 45 original levels across three worlds, each escalating in mechanical complexity and willingness to lie
+- 12 trap types: vanishing floors, emerging spikes, crushers, shifting walls, fake exits, and more
+- 12 gameplay mechanics: gravity inversion, bombs, levers, jetpack, buzzsaws, springs, rotating arms, moving terrain, control inversion, camera trolls, fake UI, and teleporters
+- Attempt-keyed level mutations with a deterministic resolver
+- Unreliable HUD that quietly drifts counters and a denial system that insists nothing changed
+- Speedrun timer, replay recording, and a stats screen showing the true figures
+- Level editor, validation harness, and PWA support for offline play
+- Privacy-friendly analytics (cookieless, no personal data)
+- Accessibility: reduced motion, colorblind-safe palette, remappable keys
+- 1235 tests, strict TypeScript, zero runtime dependencies
 
 ## Inspiration and originality
 
-Pitfall's genre is the trap platformer popularized by *Level Devil* (Unept): short levels, instant death, and traps disguised as normal level geometry. That game is the inspiration for the genre and for the general shape of "read the room or die."
-
 All code, art, audio, and level designs in this repository are original. Nothing here is copied, decompiled, or derived from *Level Devil* or any other game.
 
-## The mechanic
-
-Pitfall's difference from other trap platformers is that the level itself is not fixed. Traps and level elements can mutate between attempts, and the game denies that anything changed. The player has to notice the mutation, not just react fast enough.
-
-That idea only works if it stays fair, so three guardrails hold at all times:
-
-1. Mutations apply at level start only. The level never changes under your feet mid-run.
-2. Every mutated element is on screen and readable before the player can commit to it. The lie is about memory, never about reaction time.
-3. A mutation may never make a level unsolvable.
-
-## Stack and reasoning
+## Stack
 
 Vanilla TypeScript and Canvas2D, built with Vite, tested with Vitest.
 
-The game targets a fixed 320x180 backbuffer scaled to the viewport, on a deterministic fixed-step 60 Hz simulation driven by a seeded PRNG. The mutation system depends on that determinism: a run has to be reproducible from its seed, and the validation harness planned for M8 needs to replay attempts exactly. Getting that requires direct control over the render loop, the step, and the source of randomness. An engine like Phaser solves problems this project does not have and would add more surface area than it removes at this scope.
+The game targets a fixed 320x180 backbuffer scaled to the viewport, on a deterministic fixed-step 60 Hz simulation driven by a seeded PRNG. The mutation system depends on that determinism: a run has to be reproducible from its seed, and the validation harness replays attempts exactly.
 
 ## Build, run, test
 
@@ -33,31 +44,11 @@ npm install
 npm run dev          # start the Vite dev server
 npm run build        # production build to dist/
 npm run build:atlas  # regenerate assets/atlas.png + atlas.json (Node 22.6+)
-npm test             # run the Vitest suite once
+npm test             # run the Vitest suite (1235 tests)
 npm run lint         # eslint
 npm run typecheck    # tsc --noEmit
 ```
 
-These are the six scripts the project ships.
+## License
 
-## Roadmap
-
-The game roadmap runs across nine milestones. Issue contents under each milestone are subject to change; issues labeled `roadmap` are placeholders, not commitments.
-
-- [M1 - Foundations](https://github.com/sv-tmueller/pitfall/milestone/1): Engine primitives, level format, visual identity, deployed shell.
-- [M2 - Playable core](https://github.com/sv-tmueller/pitfall/milestone/2): Move, jump, die, respawn, reach the door.
-- [M3 - Trap system](https://github.com/sv-tmueller/pitfall/milestone/3): The trap architecture the remaining levels are built on.
-- [M4 - Gaslighting layer](https://github.com/sv-tmueller/pitfall/milestone/4): The signature mechanic, levels mutate between attempts while the game denies it.
-- [M5 - MVP](https://github.com/sv-tmueller/pitfall/milestone/5): Shipped, playable, at a public URL. 15 levels.
-- [M6 - Tier 2 mechanics](https://github.com/sv-tmueller/pitfall/milestone/6): Gravity inversion, bombs, levers, jetpack, saws, springs.
-- [M7 - Tier 3 mechanics and meta-trolls](https://github.com/sv-tmueller/pitfall/milestone/7): Rotating hazards, moving terrain, control/camera/UI trolls.
-- [M8 - Authoring and content scale](https://github.com/sv-tmueller/pitfall/milestone/8): Editor, validation harness, replays, and 30 more levels.
-- [M9 - Polish and ship](https://github.com/sv-tmueller/pitfall/milestone/9): Touch, accessibility, performance, PWA, analytics, sharing.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Licensing
-
-Code is licensed under MIT, see [LICENSE](LICENSE). Art, audio, level design data, and the Pitfall name and logo are all rights reserved, see [ASSETS-LICENSE](ASSETS-LICENSE). A plain-language explanation of what that split means in practice is at [docs/licensing.md](docs/licensing.md).
+See `docs/licensing.md` for details. Code is MIT licensed. Art and audio are original and licensed separately.
