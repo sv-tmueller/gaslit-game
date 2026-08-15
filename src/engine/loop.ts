@@ -28,7 +28,7 @@ export interface Loop {
 
 export function createLoop(callbacks: LoopCallbacks, ticker: Ticker): Loop {
   let originMs: number | null = null;
-  let lastFrameMs = 0;
+  let maxFrameMs = 0;
   let consumed = 0;
   let alpha = 0;
   let paused = false;
@@ -39,7 +39,7 @@ export function createLoop(callbacks: LoopCallbacks, ticker: Ticker): Loop {
       // Seed frame: the loop holds no clock of its own, so the first
       // callback establishes the origin instead of running steps.
       originMs = nowMs;
-      lastFrameMs = nowMs;
+      maxFrameMs = nowMs;
       callbacks.render(0);
       return;
     }
@@ -47,23 +47,17 @@ export function createLoop(callbacks: LoopCallbacks, ticker: Ticker): Loop {
     if (paused) {
       // Shift the origin forward by this frame's wall-clock delta so the
       // elapsed time used below stays pinned; that is what makes resume
-      // replay nothing instead of running a burst of banked steps. The
-      // delta is measured against lastFrameMs as a true monotonic
-      // high-water mark (only ever advanced, never overwritten backwards)
-      // rather than the previous frame's raw timestamp, so a rewind
-      // followed by a partial-recovery frame that is still below the
-      // pre-rewind high point (for example 1000 -> 400 -> 900) contributes
-      // no delta at all. Comparing against the last raw frame instead would
-      // see 400 -> 900 as a genuine forward delta of 500 and bank that as
-      // phantom elapsed time, even though no time has elapsed past the
-      // prior high point yet.
-      originMs += Math.max(nowMs - lastFrameMs, 0);
-      lastFrameMs = Math.max(lastFrameMs, nowMs);
+      // replay nothing instead of running a burst of banked steps. Measured
+      // against maxFrameMs, the monotonic high-water mark (only ever
+      // advanced), so a rewind then partial recovery (1000 -> 400 -> 900)
+      // contributes no delta: no time has elapsed past the prior high point.
+      originMs += Math.max(nowMs - maxFrameMs, 0);
+      maxFrameMs = Math.max(maxFrameMs, nowMs);
       callbacks.render(alpha);
       return;
     }
 
-    lastFrameMs = Math.max(lastFrameMs, nowMs);
+    maxFrameMs = Math.max(maxFrameMs, nowMs);
 
     // Deriving the step count from absolute elapsed time (rather than a
     // per-frame accumulator that sums float deltas) is required for exact
