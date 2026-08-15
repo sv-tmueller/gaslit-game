@@ -2,7 +2,7 @@
 
 ## Current posture
 
-Gaslit is a static, client-side browser game deployed on Vercel. There is no
+Pitfall is a static, client-side browser game deployed on Vercel. There is no
 backend, no user accounts, and no user data collected today. The game does
 not run any telemetry. (Aggregate, privacy-preserving analytics is a
 possible future addition, not a current surface.)

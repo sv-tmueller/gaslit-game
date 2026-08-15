@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Around 50 planned traps and levels are already tracked as `roadmap` placeholders, including gravity inversion, bombs, buzzsaws, teleporters, and camera trolls. Search the [open roadmap issues](https://github.com/sv-tmueller/gaslit-game/issues?q=is%3Aissue+is%3Aopen+label%3Aroadmap) before filing a new one.
+        Around 50 planned traps and levels are already tracked as `roadmap` placeholders, including gravity inversion, bombs, buzzsaws, teleporters, and camera trolls. Search the [open roadmap issues](https://github.com/sv-tmueller/pitfall/issues?q=is%3Aissue+is%3Aopen+label%3Aroadmap) before filing a new one.
   - type: checkboxes
     id: checked-roadmap
     attributes:
@@ -52,4 +52,4 @@ body:
     id: prior-art
     attributes:
       label: Seen anything like it elsewhere?
-      description: Gaslit's designs are original, with Level Devil named only as a genre inspiration. This is originality hygiene, not an invitation to paste another game's trap.
+      description: Pitfall's designs are original, with Level Devil named only as a genre inspiration. This is originality hygiene, not an invitation to paste another game's trap.
