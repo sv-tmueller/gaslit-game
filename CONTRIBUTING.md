@@ -1,4 +1,4 @@
-# Contributing to Gaslit
+# Contributing to Pitfall
 
 Thanks for taking an interest in the project. This document covers how work
 is organized, the conventions contributions are expected to follow, and how

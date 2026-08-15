@@ -2,7 +2,7 @@ import type { SaveStorage } from './storage';
 import { SAVE_SCHEMA_VERSION } from './schema';
 import type { DeathPosition, LevelSaveData, SavePayload } from './schema';
 
-export const SAVE_KEY = 'gaslit-save';
+export const SAVE_KEY = 'pitfall-save';
 
 /**
  * Maximum number of death positions retained per level. Older entries are

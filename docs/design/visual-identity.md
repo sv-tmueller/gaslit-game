@@ -1,6 +1,6 @@
 # Visual identity
 
-Gaslit's palette, rendering rules, typography and tile grammar. This document is the spec;
+Pitfall's palette, rendering rules, typography and tile grammar. This document is the spec;
 `src/render/palette.ts`, `src/render/atlas.ts` and `src/tools/build-atlas.ts` implement it.
 
 ## Palette

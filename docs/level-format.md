@@ -1,6 +1,6 @@
 # Level format
 
-A level is a JSON document describing one screen (or more) of Gaslit: grid
+A level is a JSON document describing one screen (or more) of Pitfall: grid
 dimensions, a tile layer, a spawn point, an exit door and a `traps` array.
 The format is authored, loaded and validated entirely by `src/levels/`,
 which owns and exports its own `LevelData` types and does not depend on any
