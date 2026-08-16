@@ -85,5 +85,12 @@ export function flushModel(
         );
       }
     }
+
+    // Flush text elements (HUD layer).
+    for (const txt of layer.texts) {
+      ctx.font = '8px monospace';
+      ctx.fillStyle = PALETTE[txt.color];
+      ctx.fillText(txt.text, txt.x, txt.y);
+    }
   }
 }
