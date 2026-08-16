@@ -9,5 +9,15 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    rules: {
+      // Allow underscore-prefixed identifiers to be unused (convention for
+      // intentionally-unused params that must satisfy an interface signature).
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
   eslintConfigPrettier,
 );

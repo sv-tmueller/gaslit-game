@@ -2,7 +2,7 @@
 // Importing this module registers every mechanic factory in the registry.
 // Games import this once at startup; tests import individual factories.
 
-import { registerMechanicType } from './registry';
+import { isRegistered, registerMechanicType } from './registry';
 import { createSpringMechanic } from './adapters';
 import { createTeleporterMechanic } from './adapters';
 import { createGravityZoneMechanic } from './adapters';
@@ -17,10 +17,11 @@ import { createRotatingArmMechanic } from './adapters';
 import { createBombMechanic } from './adapters';
 import { createTokenMechanic } from './adapters';
 
-let registered = false;
-
 export function registerAllMechanicTypes(): void {
-  if (registered) return;
+  // Guard against double-registration by checking the registry itself (not a
+  // flag). This ensures correctness after clearRegistry() in tests: the types
+  // are gone, so re-registration proceeds normally.
+  if (isRegistered('spring')) return;
   registerMechanicType('spring', createSpringMechanic);
   registerMechanicType('teleporter', createTeleporterMechanic);
   registerMechanicType('gravity-zone', createGravityZoneMechanic);
@@ -34,7 +35,6 @@ export function registerAllMechanicTypes(): void {
   registerMechanicType('rotating-arm', createRotatingArmMechanic);
   registerMechanicType('bomb', createBombMechanic);
   registerMechanicType('token', createTokenMechanic);
-  registered = true;
 }
 
 // Re-export individual factories for tests that want to register selectively.
