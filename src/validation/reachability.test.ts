@@ -92,3 +92,541 @@ describe('reachability validation (physics-calibrated)', () => {
     expect(validateReachability(tooHigh)).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Mechanics-aware reachability tests (#129 checkpoint 7)
+// ---------------------------------------------------------------------------
+
+describe('reachability with springs', () => {
+  it('spring allows reaching a ledge too high for a normal jump', () => {
+    // A room with a high ledge 4 tiles above the floor. The spring is in a
+    // different column from the exit so the spring's vertical path is clear
+    // (the obstruction check scans the source column, not the destination).
+    //
+    //   Row 0: ceiling
+    //   Row 1: exit area (exit at col 4, solid ledge below at row 2)
+    //   Row 2: solid ledge under exit (cols 4-5 solid)
+    //   Rows 3-5: open air
+    //   Row 6: solid floor
+    //   Row 7: solid floor
+    //
+    // Spawn at (1, 5): below row 6 = solid → standable.
+    // Exit at (4, 1): below (4, 2) = solid → standable.
+    // Spring at tile (1, 5) → pixel (16, 80). Same tile as spawn.
+    //
+    // Rise from spring (row 5) to exit (row 1) = 4 tiles.
+    // Horizontal: spring col 1, exit col 4 → dc=3.
+    // Envelope: 3/4 + 4/riseTiles ≈ 0.75 + 0.24 ≈ 0.99 ≤ 1 (riseTiles≈17).
+    // Obstruction: source col 1, rows 4-2 all empty → clear. ✓
+    //
+    // Normal max rise = 2 → unreachable without spring.
+    // Spring impulseY=-700 → rise ≈ 700²/(2×900)/16 ≈ 17 tiles >> 4.
+    const level = loadLevel({
+      name: 'spring-climb',
+      cols: 6, rows: 8,
+      spawn: { col: 1, row: 5 },
+      exit: { col: 4, row: 1 },
+      tiles: [
+        '111111', // row 0: ceiling
+        '100001', // row 1: exit area
+        '100011', // row 2: solid ledge under exit (cols 4-5 solid)
+        '100001', // row 3
+        '100001', // row 4
+        '100001', // row 5: spawn area, spring here
+        '111111', // row 6: floor
+        '111111', // row 7: floor
+      ],
+      traps: [],
+      mechanics: [
+        {
+          id: 'spring1',
+          type: 'spring',
+          params: { x: 16, y: 80, impulseY: -700 },
+        },
+      ],
+    });
+    expect(validateReachability(level)).toBe(true);
+  });
+
+  it('same level WITHOUT spring is unreachable (high ledge)', () => {
+    // Same geometry but no spring → the 4-tile rise is impossible.
+    const level = loadLevel({
+      name: 'no-spring',
+      cols: 6, rows: 8,
+      spawn: { col: 1, row: 5 },
+      exit: { col: 4, row: 1 },
+      tiles: [
+        '111111',
+        '100001',
+        '100011',
+        '100001',
+        '100001',
+        '100001',
+        '111111',
+        '111111',
+      ],
+      traps: [],
+    });
+    expect(validateReachability(level)).toBe(false);
+  });
+
+  it('weak spring that cannot bridge the gap leaves level unreachable', () => {
+    // Same geometry but with a weak spring whose rise envelope < 4 tiles.
+    // impulseY = -300 → peak = 300²/(2×900)/16 ≈ 3.125 tiles.
+    // Floor(3.125) = 3 tiles. Rise needed = 4 tiles (row 5 → row 1).
+    // 3 < 4 → unreachable.
+    const level = loadLevel({
+      name: 'weak-spring',
+      cols: 6, rows: 8,
+      spawn: { col: 1, row: 5 },
+      exit: { col: 4, row: 1 },
+      tiles: [
+        '111111',
+        '100001',
+        '100011',
+        '100001',
+        '100001',
+        '100001',
+        '111111',
+        '111111',
+      ],
+      traps: [],
+      mechanics: [
+        {
+          id: 'spring1',
+          type: 'spring',
+          params: { x: 16, y: 80, impulseY: -300 },
+        },
+      ],
+    });
+    expect(validateReachability(level)).toBe(false);
+  });
+
+  it('level without mechanics validates identically (regression)', () => {
+    // The optional mechanics field is absent. Behavior must match
+    // the pre-extension validator exactly.
+    const level = loadLevel({
+      name: 'no-mechs',
+      cols: 10, rows: 6,
+      spawn: { col: 1, row: 4 },
+      exit: { col: 8, row: 4 },
+      tiles: [
+        '1111111111',
+        '1000000001',
+        '1000000001',
+        '1000000001',
+        '1000000001',
+        '1111111111',
+      ],
+      traps: [],
+    });
+    expect(validateReachability(level)).toBe(true);
+  });
+});
+
+describe('reachability with teleporters', () => {
+  it('one-way teleporter bridges a floor gap wider than jump range', () => {
+    // Two platforms separated by a floor gap wider than MAX_FLAT_GAP.
+    // The validator models flat jumps as ignoring walls (known approximation),
+    // so we use a floor gap to prevent walking.
+    //
+    //   cols: 12, rows: 4
+    //   Row 0: ceiling (all solid)
+    //   Row 1: open passage
+    //   Row 2: open passage (spawn and exit here)
+    //   Row 3: floor with a 6-tile gap (cols 3-8 are empty)
+    //
+    // Spawn at (1, 2): below (1, 3) = solid → standable.
+    // Exit at (10, 2): below (10, 3) = solid → standable.
+    // Gap: cols 3-8 at row 3 are empty → no standable positions in between.
+    // Distance from col 2 to col 9 = 7 tiles > MAX_FLAT_GAP (4).
+    //
+    // Teleporter at pixel (32, 32) = tile (2, 2) → pixel (160, 32) = tile (10, 2).
+    const level = loadLevel({
+      name: 'teleport-floor-gap',
+      cols: 12, rows: 4,
+      spawn: { col: 1, row: 2 },
+      exit: { col: 10, row: 2 },
+      tiles: [
+        '111111111111',
+        '100000000001',
+        '100000000001',
+        '111000000111',
+      ],
+      traps: [],
+      mechanics: [
+        {
+          id: 'tp1',
+          type: 'teleporter',
+          params: { x: 32, y: 32, destX: 160, destY: 32, oneWay: true },
+        },
+      ],
+    });
+    expect(validateReachability(level)).toBe(true);
+  });
+
+  it('bidirectional teleporter adds reciprocal edge', () => {
+    // Same floor-gap layout, but the teleporter is bidirectional.
+    // Spawn is on the RIGHT side, exit on the LEFT. The reverse edge
+    // (from dest back to source) makes it reachable.
+    const level = loadLevel({
+      name: 'bi-teleport',
+      cols: 12, rows: 4,
+      spawn: { col: 10, row: 2 },
+      exit: { col: 1, row: 2 },
+      tiles: [
+        '111111111111',
+        '100000000001',
+        '100000000001',
+        '111000000111',
+      ],
+      traps: [],
+      mechanics: [
+        {
+          id: 'tp1',
+          type: 'teleporter',
+          params: { x: 32, y: 32, destX: 160, destY: 32, oneWay: false },
+        },
+      ],
+    });
+    expect(validateReachability(level)).toBe(true);
+  });
+
+  it('teleporter to a non-standable destination does not help', () => {
+    // Teleporter destination is in mid-air (no surface below) → not standable.
+    // The edge is not added, and the floor gap prevents walking.
+    const level = loadLevel({
+      name: 'bad-tp-dest',
+      cols: 12, rows: 4,
+      spawn: { col: 1, row: 2 },
+      exit: { col: 10, row: 2 },
+      tiles: [
+        '111111111111',
+        '100000000001',
+        '100000000001',
+        '111000000111',
+      ],
+      traps: [],
+      mechanics: [
+        {
+          id: 'tp1',
+          type: 'teleporter',
+          params: {
+            // Dest at tile (10, 1) — row 1 is open, below row 2 is open → not standable.
+            x: 32, y: 32, destX: 160, destY: 16, oneWay: true,
+          },
+        },
+      ],
+    });
+    expect(validateReachability(level)).toBe(false);
+  });
+
+  it('floor gap without teleporter is unreachable', () => {
+    const level = loadLevel({
+      name: 'gap-no-tp',
+      cols: 12, rows: 4,
+      spawn: { col: 1, row: 2 },
+      exit: { col: 10, row: 2 },
+      tiles: [
+        '111111111111',
+        '100000000001',
+        '100000000001',
+        '111000000111',
+      ],
+      traps: [],
+    });
+    expect(validateReachability(level)).toBe(false);
+  });
+});
+
+describe('reachability with moving terrain', () => {
+  it('moving platform bridges a floor gap wider than jump range', () => {
+    // A wide gap in the floor (6 tiles) that exceeds the 4-tile jump gap.
+    // A moving platform oscillates across the gap, making both endpoints
+    // standable and adding ride edges between them.
+    //
+    //   cols: 12, rows: 4
+    //   Row 0: ceiling
+    //   Row 1: open
+    //   Row 2: open (spawn and exit here)
+    //   Row 3: floor with a 6-tile gap (cols 3-8 empty)
+    //
+    // Spawn at (1, 2), exit at (10, 2).
+    // Gap: cols 3-8 at row 3 are empty → no standable positions.
+    // Distance from col 2 to col 9 = 7 tiles > MAX_FLAT_GAP (4).
+    //
+    // Moving platform from tile (2, 2) to tile (9, 2), distance=112px=7 tiles.
+    // Both (2, 2) and (9, 2) become standable. Ride edge connects them.
+    // Path: (1,2)→walk→(2,2)*→ride→(9,2)*→walk→(10,2).
+    const level = loadLevel({
+      name: 'moving-platform-bridge',
+      cols: 12, rows: 4,
+      spawn: { col: 1, row: 2 },
+      exit: { col: 10, row: 2 },
+      tiles: [
+        '111111111111',
+        '100000000001',
+        '100000000001',
+        '111000000111',
+      ],
+      traps: [],
+      mechanics: [
+        {
+          id: 'mp1',
+          type: 'moving-platform',
+          params: {
+            startX: 32, startY: 32,   // tile (2, 2)
+            width: 16, height: 16,
+            dx: 1, dy: 0,
+            speed: 60, distance: 112,  // 7 tiles → endpoint at tile (9, 2)
+          },
+        },
+      ],
+    });
+    expect(validateReachability(level)).toBe(true);
+  });
+
+  it('same floor gap without moving platform is unreachable', () => {
+    const level = loadLevel({
+      name: 'gap-no-platform',
+      cols: 12, rows: 4,
+      spawn: { col: 1, row: 2 },
+      exit: { col: 10, row: 2 },
+      tiles: [
+        '111111111111',
+        '100000000001',
+        '100000000001',
+        '111000000111',
+      ],
+      traps: [],
+    });
+    expect(validateReachability(level)).toBe(false);
+  });
+
+  it('moving platform enables crossing a vertical gap via ride edge', () => {
+    // A platform that moves vertically. The lower endpoint is at floor level
+    // (standable anyway), the upper endpoint is near a high ledge, connected
+    // by a ride edge.
+    //
+    //   cols: 8, rows: 8
+    //   Row 0: ceiling
+    //   Row 1: high ledge (exit at col 4, solid at cols 4-6 row 2 for standing)
+    //   Rows 2-5: open air
+    //   Row 6: floor
+    //   Row 7: floor
+    //
+    // Platform moves vertically from tile (2, 5) to tile (2, 2).
+    // (2, 5) is standable (below = row 6 solid). (2, 2) is standable via
+    // extraStandable. Ride edge connects (2, 5) ↔ (2, 2).
+    // From (2, 2): jump to (4, 1). Rise=1, lat=2. Envelope: 2/4 + 1/2 = 1.0 ≤ 1. ✓
+    // (4, 1): below (4, 2) = solid → standable ✓.
+    const level = loadLevel({
+      name: 'vert-platform',
+      cols: 8, rows: 8,
+      spawn: { col: 1, row: 5 },
+      exit: { col: 4, row: 1 },
+      tiles: [
+        '11111111', // row 0: ceiling
+        '10000001', // row 1: exit area
+        '10001111', // row 2: solid under exit (cols 4-6 solid)
+        '10000001', // row 3
+        '10000001', // row 4
+        '10000001', // row 5: spawn area, platform low point
+        '11111111', // row 6: floor
+        '11111111', // row 7: floor
+      ],
+      traps: [],
+      mechanics: [
+        {
+          id: 'vp1',
+          type: 'moving-platform',
+          params: {
+            startX: 32, startY: 80,  // tile (2, 5)
+            width: 16, height: 16,
+            dx: 0, dy: -1,           // moves upward
+            speed: 60, distance: 48,  // 3 tiles up → endpoint at (2, 2)
+          },
+        },
+      ],
+    });
+    expect(validateReachability(level)).toBe(true);
+  });
+
+  it('vertical gap without moving platform is unreachable', () => {
+    // Same geometry but no platform. The 4-tile rise from row 5 to row 1
+    // exceeds MAX_RISE (2).
+    const level = loadLevel({
+      name: 'vert-no-platform',
+      cols: 8, rows: 8,
+      spawn: { col: 1, row: 5 },
+      exit: { col: 4, row: 1 },
+      tiles: [
+        '11111111',
+        '10000001',
+        '10001111',
+        '10000001',
+        '10000001',
+        '10000001',
+        '11111111',
+        '11111111',
+      ],
+      traps: [],
+    });
+    expect(validateReachability(level)).toBe(false);
+  });
+});
+
+describe('reachability with gravity inversion', () => {
+  it('gravity zone allows reaching exit via inverted surfaces', () => {
+    // Full-level gravity inversion. The ceiling acts as the floor.
+    // The player walks on ceiling-derived surfaces and uses "drops"
+    // (which go UP in inverted mode) to navigate.
+    //
+    //   cols: 10, rows: 8
+    //   Row 0: '1100000011' — ceiling with gap at cols 2-7
+    //   Row 1: '1222222221' — one-way ceiling for tunnel (surface above in inv.)
+    //   Row 2: '1000000001' — tunnel
+    //   Row 3: '1000000001' — tunnel
+    //   Row 4: '1111111111' — solid lower ceiling
+    //   Row 5: '1000000001' — lower walkway
+    //   Row 6: '1111111111' — floor
+    //   Row 7: '1111111111' — floor
+    //
+    // Full-level gravity zone: x=0, y=0, w=160, h=128.
+    //
+    // Spawn at (1, 1): above (1, 0) = solid → standable (inverted) ✓
+    // Exit at (8, 1): above (8, 0) = solid → standable (inverted) ✓
+    //
+    // Path: (1,1) → jump↓1 → (2,2) [above=(2,1)=OneWay ✓]
+    //   → walk → (7,2) [all above=OneWay ✓]
+    //   → drop↑1+dc=1 → (8,1) [above=(8,0)=solid ✓]
+    const level = loadLevel({
+      name: 'gravity-invert',
+      cols: 10, rows: 8,
+      spawn: { col: 1, row: 1 },
+      exit: { col: 8, row: 1 },
+      tiles: [
+        '1100000011',
+        '1222222221',
+        '1000000001',
+        '1000000001',
+        '1111111111',
+        '1000000001',
+        '1111111111',
+        '1111111111',
+      ],
+      traps: [],
+      mechanics: [
+        {
+          id: 'gz1',
+          type: 'gravity-zone',
+          params: { x: 0, y: 0, width: 160, height: 128 },
+        },
+      ],
+    });
+    expect(validateReachability(level)).toBe(true);
+  });
+
+  it('same level WITHOUT gravity zone is unreachable', () => {
+    // Without the zone, spawn at (1,1) is not standable (below = '0'),
+    // so the level is vacuously unreachable.
+    const level = loadLevel({
+      name: 'no-gravity-zone',
+      cols: 10, rows: 8,
+      spawn: { col: 1, row: 1 },
+      exit: { col: 8, row: 1 },
+      tiles: [
+        '1100000011',
+        '1222222221',
+        '1000000001',
+        '1000000001',
+        '1111111111',
+        '1000000001',
+        '1111111111',
+        '1111111111',
+      ],
+      traps: [],
+    });
+    expect(validateReachability(level)).toBe(false);
+  });
+
+  it('partial gravity zone: normal gravity outside, inverted inside', () => {
+    // Left half is normal gravity, right half has a gravity zone.
+    // The player walks normally on the left, enters the zone, and
+    // continues on inverted surfaces.
+    //
+    //   cols: 10, rows: 6
+    //   Row 0: '1111111111' — full ceiling
+    //   Row 1: '1000000000'
+    //   Row 2: '1000011111' — solid at cols 5-9 (ceiling for inverted area)
+    //   Row 3: '1000000000'
+    //   Row 4: '1111100000' — floor left side only
+    //   Row 5: '1111111111' — solid floor
+    //
+    // Zone: cols 5-9, rows 0-4. Pixel: x=80, y=0, w=80, h=80.
+    //
+    // Spawn (1, 3): normal, below (1, 4) = solid ✓
+    // Exit (8, 1): inside zone, above (8, 0) = solid ✓ (inverted)
+    //
+    // Path: (1,3) → walk → (4,3) [normal, below=solid ✓]
+    //   → walk → (5,3) [inside zone, above (5,2)=solid ✓]
+    //   → walk → (8,3) [inside zone, above=solid ✓]
+    //   → drop↑2 → (8,1) [above (8,0)=solid ✓]
+    const level = loadLevel({
+      name: 'partial-gravity',
+      cols: 10, rows: 6,
+      spawn: { col: 1, row: 3 },
+      exit: { col: 8, row: 1 },
+      tiles: [
+        '1111111111',
+        '1000000000',
+        '1000011111',
+        '1000000000',
+        '1111100000',
+        '1111111111',
+      ],
+      traps: [],
+      mechanics: [
+        {
+          id: 'gz1',
+          type: 'gravity-zone',
+          params: { x: 80, y: 0, width: 80, height: 80 },
+        },
+      ],
+    });
+    expect(validateReachability(level)).toBe(true);
+  });
+
+  it('partial gravity zone WITHOUT the zone is unreachable', () => {
+    // Without the zone, the right side has no floor (row 4 cols 5-9 empty)
+    // and the exit at (8, 1) has no surface below (row 2 col 8 = solid,
+    // but in NORMAL gravity, standable requires surface BELOW, which is
+    // row 2 = solid → actually standable!). Let me check:
+    // (8, 1): passable (Empty) ✓. Below (8, 2) = solid → standable ✓!
+    // So the exit IS standable without the zone. But can the player reach it?
+    // (1, 3) → walk → (4, 3) [below (4, 4) = solid ✓]
+    // (5, 3): below (5, 4) = '0' → not standable. Gap in floor.
+    // Can the player jump from (4, 3) to (8, 1)? dc=4, rise=2.
+    // Envelope: 4/4 + 2/2 = 2 > 1 → NO.
+    // Jump from (4, 3) to (8, 3)? dc=4, dr=0. Flat jump 4 tiles = MAX_FLAT_GAP.
+    // (8, 3): below (8, 4) = '0' → not standable. ✗
+    // Jump from (4, 3) to (6, 1)? dc=2, rise=2. Envelope: 2/4 + 2/2 = 1.5 > 1. ✗
+    // So without the zone, unreachable ✓.
+    const level = loadLevel({
+      name: 'partial-no-zone',
+      cols: 10, rows: 6,
+      spawn: { col: 1, row: 3 },
+      exit: { col: 8, row: 1 },
+      tiles: [
+        '1111111111',
+        '1000000000',
+        '1000011111',
+        '1000000000',
+        '1111100000',
+        '1111111111',
+      ],
+      traps: [],
+    });
+    expect(validateReachability(level)).toBe(false);
+  });
+});

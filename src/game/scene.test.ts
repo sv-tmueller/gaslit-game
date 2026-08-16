@@ -434,3 +434,157 @@ describe('scene - hazard takes priority over exit', () => {
     expect(s.deathsThisLevel).toBe(1);
   });
 });
+
+// ===========================================================================
+// Mechanics integration (springs, teleporters)
+// ===========================================================================
+
+describe('scene - mechanics integration', () => {
+  it('scene state includes mechanicsRuntime', () => {
+    const scene = createScene([asSource(SAFE_LEVEL)]);
+    expect(scene.mechanicsRuntime).toBeDefined();
+    expect(scene.mechanicsRuntime.mechanics).toHaveLength(0);
+  });
+
+  it('levels with mechanics create mechanic instances', () => {
+    // Use asSource but add mechanics to the source.
+    const source = asSource(SAFE_LEVEL) as Record<string, unknown>;
+    source['mechanics'] = [
+      { id: 'sp1', type: 'spring', params: { x: 16, y: 16, impulseY: -400 } },
+    ];
+    const scene = createScene([source]);
+    expect(scene.mechanicsRuntime.mechanics).toHaveLength(1);
+    expect(scene.mechanicsRuntime.mechanics[0]!.id).toBe('sp1');
+  });
+
+  it('spring launches player upward on contact', () => {
+    // Build a level where the player stands on a spring at spawn.
+    // The spring imparts a strong upward velocity, lifting the player off
+    // the ground. We verify the body's y-velocity becomes strongly negative.
+    const source: unknown = {
+      name: 'spring-test',
+      cols: 6,
+      rows: 4,
+      spawn: { col: 1, row: 2 },
+      exit: { col: 5, row: 2 },
+      tiles: [
+        '111111',
+        '000000',
+        '000000',
+        '111111',
+      ],
+      traps: [],
+      mechanics: [
+        // Spring placed exactly at spawn tile (col=1, row=2 => x=16, y=32).
+        // Player body occupies (16, 32) to (32, 48) initially.
+        { id: 'sp1', type: 'spring', params: { x: 16, y: 32, impulseY: -500 } },
+      ],
+    };
+
+    const scene = createScene([source]);
+
+    // Step once: player should contact the spring and get launched.
+    const s = stepScene(scene, idle(), DT);
+
+    // The spring overrides vy to -500. Even after one controller step
+    // (which applies gravity), the velocity should be strongly negative.
+    expect(s.controller.body.velocity.y).toBeLessThan(-400);
+  });
+
+  it('teleporter relocates player to destination on contact', () => {
+    // Build a level where the player spawns on top of a teleporter that
+    // sends them to a distant location.
+    const source: unknown = {
+      name: 'teleport-test',
+      cols: 10,
+      rows: 4,
+      spawn: { col: 1, row: 2 },
+      exit: { col: 8, row: 2 },
+      tiles: [
+        '1111111111',
+        '0000000000',
+        '0000000000',
+        '1111111111',
+      ],
+      traps: [],
+      mechanics: [
+        // Teleporter at spawn (col=1, row=2 => x=16, y=32).
+        // Destination at col=7 (x=112, y=32).
+        { id: 'tp1', type: 'teleporter', params: { x: 16, y: 32, destX: 112, destY: 32 } },
+      ],
+    };
+
+    const scene = createScene([source]);
+
+    // Step once: player should be teleported.
+    const s = stepScene(scene, idle(), DT);
+
+    // The player's x should have jumped significantly toward destX.
+    expect(s.controller.body.x).toBeGreaterThan(100);
+  });
+
+  it('levels without mechanics field behave identically (backward compat)', () => {
+    // Same SAFE_LEVEL but without mechanics in the source.
+    const source = asSource(SAFE_LEVEL);
+    const scene = createScene([source]);
+
+    // Step a few times—should not crash or produce unexpected state.
+    let s = stepScene(scene, idle(), DT);
+    s = stepScene(s, idle(), DT);
+    s = stepScene(s, idle(), DT);
+
+    expect(s.phase).toBe('playing');
+    expect(s.mechanicsRuntime.mechanics).toHaveLength(0);
+  });
+
+  it('mechanics runtime resets on respawn', () => {
+    // Level with a moving platform that advances over time.
+    const source: unknown = {
+      name: 'respawn-test',
+      cols: 6,
+      rows: 4,
+      spawn: { col: 1, row: 2 },
+      exit: { col: 5, row: 2 },
+      tiles: [
+        '111111',
+        '000000',
+        '000000',
+        '111111',
+      ],
+      traps: [],
+      mechanics: [
+        { id: 'mp1', type: 'moving-platform', params: {
+          startX: 16, startY: 16, width: 16, height: 16,
+          dx: 1, dy: 0, speed: 16, distance: 48,
+        }},
+      ],
+    };
+
+    const scene = createScene([source]);
+
+    // Step a few times to move the platform.
+    let s = stepScene(scene, idle(), DT);
+    s = stepScene(s, idle(), DT);
+    s = stepScene(s, idle(), DT);
+
+    // The mechanics runtime should have published solids.
+    expect(s.mechanicsRuntime.publishedSolids.length).toBeGreaterThan(0);
+    const movedX = s.mechanicsRuntime.publishedSolids[0]!.x;
+    expect(movedX).toBeGreaterThan(0);
+
+    // Die and respawn: the platform should reset to its start position.
+    // Force death by injecting a hazardous state.
+    s = stepScene(s, idle({ restart: true }), DT);
+    expect(s.phase).toBe('dying');
+
+    // Exhaust death timer.
+    for (let i = 0; i < DEATH_FREEZE_STEPS + 1; i++) {
+      s = stepScene(s, idle(), DT);
+    }
+    expect(s.phase).toBe('playing');
+
+    // After respawn, the platform should be back at startX.
+    s = stepScene(s, idle(), DT);
+    expect(s.mechanicsRuntime.publishedSolids[0]!.x).toBe(16);
+  });
+});

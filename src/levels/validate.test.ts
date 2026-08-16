@@ -238,4 +238,135 @@ describe('parseLevel', () => {
       message: 'exit: expected an object with col and row, got 42',
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Mechanics field (optional, mirrors traps validation)
+  // -------------------------------------------------------------------------
+
+  it('parses a valid document with a mechanics array', () => {
+    const doc = validDocument();
+    doc['mechanics'] = [
+      { id: 'sp1', type: 'spring', params: { x: 32, y: 48, impulseY: -400 } },
+    ];
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.level.mechanics).toEqual([
+      { id: 'sp1', type: 'spring', params: { x: 32, y: 48, impulseY: -400 } },
+    ]);
+  });
+
+  it('defaults mechanics to an empty array when the field is absent', () => {
+    const doc = validDocument();
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.level.mechanics).toEqual([]);
+  });
+
+  it('accepts a mechanics entry without params (defaults to {})', () => {
+    const doc = validDocument();
+    doc['mechanics'] = [{ id: 'ci1', type: 'control-inversion' }];
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.level.mechanics).toHaveLength(1);
+    expect(result.level.mechanics![0]!.params).toEqual({});
+  });
+
+  it('rejects a non-array mechanics field with malformed-mechanic', () => {
+    const doc = validDocument();
+    doc['mechanics'] = 'not-an-array';
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some(e => e.code === 'malformed-mechanic')).toBe(true);
+  });
+
+  it('reports malformed-mechanic for an entry missing type', () => {
+    const doc = validDocument();
+    doc['mechanics'] = [{ id: 'm1' }];
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toMatchObject({
+      code: 'malformed-mechanic',
+      path: 'mechanics[0].type',
+    });
+  });
+
+  it('reports malformed-mechanic for an entry missing id', () => {
+    const doc = validDocument();
+    doc['mechanics'] = [{ type: 'spring' }];
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toMatchObject({
+      code: 'malformed-mechanic',
+      path: 'mechanics[0].id',
+    });
+  });
+
+  it('reports malformed-mechanic when params is an array', () => {
+    const doc = validDocument();
+    doc['mechanics'] = [{ id: 'm1', type: 'spring', params: [] }];
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toMatchObject({
+      code: 'malformed-mechanic',
+      path: 'mechanics[0].params',
+    });
+  });
+
+  it('reports duplicate-mechanic-id for two mechanics sharing an id', () => {
+    const doc = validDocument();
+    doc['mechanics'] = [
+      { id: 'dup', type: 'spring', params: {} },
+      { id: 'dup', type: 'teleporter', params: {} },
+    ];
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toMatchObject({
+      code: 'duplicate-mechanic-id',
+      path: 'mechanics[1].id',
+    });
+  });
+
+  it('accepts mechanics with distinct ids alongside traps', () => {
+    const doc = validDocument();
+    doc['traps'] = [{ id: 't1', type: 'spike', trigger: 'on-enter', params: {} }];
+    doc['mechanics'] = [
+      { id: 'sp1', type: 'spring', params: { impulseY: -400 } },
+      { id: 'tp1', type: 'teleporter', params: { destX: 100 } },
+    ];
+
+    const result = parseLevel(doc);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.level.traps).toHaveLength(1);
+    expect(result.level.mechanics).toHaveLength(2);
+  });
 });
