@@ -7,6 +7,7 @@ import { loadLevel } from '../levels/load';
 import { FIXTURE_SOURCES } from '../levels/fixtures';
 import type { AtlasManifest } from './atlas';
 import type { BlitContext } from './batcher';
+import type { RenderWorld } from './model';
 
 const MANIFEST = atlasManifest as unknown as AtlasManifest;
 const BITMAP: BitmapLike = { width: 128, height: 40 };
@@ -37,6 +38,22 @@ function createMockCtx(): BlitContext & {
 
 const LEVEL = loadLevel(FIXTURE_SOURCES['corridor']);
 
+/**
+ * Builds a RenderWorld from a loaded LevelData, converting the static tile
+ * grid into the physics-grid format the renderer expects (Hazard→Empty is
+ * handled implicitly since corridor has no hazards).
+ */
+function worldFromLevel(level: typeof LEVEL): RenderWorld {
+  return {
+    cols: level.cols,
+    rows: level.rows,
+    tiles: level.tiles,
+    exit: level.exit,
+    hazards: [],
+    dynamicSolids: [],
+  };
+}
+
 describe('renderFrame', () => {
   it('renders a fixture level tile layer producing expected drawImage calls', () => {
     const ctx = createMockCtx();
@@ -44,7 +61,7 @@ describe('renderFrame', () => {
 
     const rc: RenderContext = {
       atlas: ATLAS,
-      level: LEVEL,
+      world: worldFromLevel(LEVEL),
       camera,
       entities: [],
       prevEntities: [],
@@ -65,7 +82,7 @@ describe('renderFrame', () => {
     const ctx = createMockCtx();
     const rc: RenderContext = {
       atlas: ATLAS,
-      level: LEVEL,
+      world: worldFromLevel(LEVEL),
       camera: { x: 0, y: 0 },
       entities: [],
       prevEntities: [],
@@ -95,7 +112,7 @@ describe('renderFrame', () => {
 
     const rc: RenderContext = {
       atlas: ATLAS,
-      level: LEVEL,
+      world: worldFromLevel(LEVEL),
       camera,
       entities: [currEnt],
       prevEntities: [prevEnt],
@@ -136,7 +153,7 @@ describe('renderFrame', () => {
 
     const rc: RenderContext = {
       atlas: ATLAS,
-      level: LEVEL,
+      world: worldFromLevel(LEVEL),
       camera,
       entities,
       prevEntities,

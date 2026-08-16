@@ -5,14 +5,13 @@
 import type { LoadedAtlas } from './atlas-loader';
 import { flushModel, type BlitContext } from './batcher';
 import type { Camera } from './camera';
-import { buildRenderModel, type EntitySnapshot } from './model';
-import type { LevelData } from '../levels/types';
+import { buildRenderModel, type EntitySnapshot, type RenderWorld } from './model';
 
-export type { EntitySnapshot };
+export type { EntitySnapshot, RenderWorld };
 
 export interface RenderContext {
   readonly atlas: LoadedAtlas;
-  readonly level: LevelData;
+  readonly world: RenderWorld;
   readonly camera: Camera;
   readonly entities: readonly EntitySnapshot[];
   readonly prevEntities: readonly EntitySnapshot[];
@@ -24,7 +23,7 @@ export function renderFrame(
   alpha: number,
 ): void {
   const model = buildRenderModel(
-    rc.level,
+    rc.world,
     rc.camera,
     rc.entities,
     rc.prevEntities,
