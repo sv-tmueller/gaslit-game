@@ -443,7 +443,7 @@ import {
 
 export function createFakeUiMechanic(entry: MechanicEntry): MechanicInstance {
   const seed = optNumber(entry.params, 'seed') ?? 42;
-  const kind = (optNumber(entry.params, 'kind') ?? 'fake-crash') as FakeUiKind;
+  const kind = (reqString(entry.params, 'kind')) as FakeUiKind;
   const durationSteps = optNumber(entry.params, 'durationSteps') ?? 120;
 
   let state: FakeUiState = createFakeUi(seed);
