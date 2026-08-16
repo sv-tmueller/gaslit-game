@@ -40,7 +40,7 @@
     {
       "id": "gaunt-1",
       "type": "vanishing-floor",
-      "trigger": "on-land",
+      "trigger": "on-timer",
       "params": {
         "tiles": [
           {
@@ -52,14 +52,14 @@
             "row": 10
           }
         ],
-        "delaySteps": 5,
+        "delaySteps": 40,
         "returns": false
       }
     },
     {
       "id": "gaunt-2",
       "type": "vanishing-floor",
-      "trigger": "on-land",
+      "trigger": "on-timer",
       "params": {
         "tiles": [
           {
@@ -71,7 +71,7 @@
             "row": 10
           }
         ],
-        "delaySteps": 5,
+        "delaySteps": 40,
         "returns": false
       }
     },

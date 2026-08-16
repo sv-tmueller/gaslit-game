@@ -28,7 +28,7 @@
     {
       "id": "vanish-pad",
       "type": "vanishing-floor",
-      "trigger": "on-land",
+      "trigger": "on-timer",
       "params": {
         "tiles": [
           {
@@ -40,7 +40,7 @@
             "row": 10
           }
         ],
-        "delaySteps": 15,
+        "delaySteps": 40,
         "returns": true,
         "returnDelaySteps": 30
       }

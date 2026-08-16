@@ -78,7 +78,7 @@
     {
       "id": "mid-vanish",
       "type": "vanishing-floor",
-      "trigger": "on-land",
+      "trigger": "on-timer",
       "params": {
         "tiles": [
           {
@@ -86,7 +86,7 @@
             "row": 11
           }
         ],
-        "delaySteps": 8,
+        "delaySteps": 40,
         "returns": false
       }
     },
