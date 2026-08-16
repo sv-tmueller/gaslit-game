@@ -41,17 +41,5 @@
         "returnDelaySteps": 20
       }
     }
-  ],
-  "mutations": [
-    {
-      "attempt": 2,
-      "deltas": [
-        {
-          "kind": "swap-trigger",
-          "trapId": "floor-trap",
-          "trigger": "on-timer"
-        }
-      ]
-    }
   ]
 }

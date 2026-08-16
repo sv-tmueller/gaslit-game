@@ -2,8 +2,14 @@
   "name": "demo-trigger-change",
   "cols": 20,
   "rows": 12,
-  "spawn": { "col": 2, "row": 9 },
-  "exit": { "col": 17, "row": 9 },
+  "spawn": {
+    "col": 2,
+    "row": 9
+  },
+  "exit": {
+    "col": 17,
+    "row": 9
+  },
   "tiles": [
     "11111111111111111111",
     "10000000000000000001",
@@ -23,15 +29,11 @@
       "id": "floor-trap",
       "type": "vanishing-floor",
       "trigger": "on-land",
-      "params": { "col": 10, "row": 9, "delayMs": 300 }
-    }
-  ],
-  "mutations": [
-    {
-      "attempt": 2,
-      "deltas": [
-        { "kind": "swap-trigger", "trapId": "floor-trap", "trigger": "on-timer" }
-      ]
+      "params": {
+        "col": 10,
+        "row": 9,
+        "delayMs": 300
+      }
     }
   ]
 }

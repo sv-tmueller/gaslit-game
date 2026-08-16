@@ -161,36 +161,5 @@
         "thrustPower": 260
       }
     }
-  ],
-  "mutations": [
-    {
-      "attempt": 3,
-      "deltas": [
-        {
-          "kind": "set-tile",
-          "col": 10,
-          "row": 10,
-          "tile": 1
-        },
-        {
-          "kind": "set-tile",
-          "col": 11,
-          "row": 10,
-          "tile": 1
-        },
-        {
-          "kind": "set-tile",
-          "col": 10,
-          "row": 11,
-          "tile": 1
-        },
-        {
-          "kind": "set-tile",
-          "col": 11,
-          "row": 11,
-          "tile": 1
-        }
-      ]
-    }
   ]
 }

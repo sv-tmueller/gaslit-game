@@ -44,7 +44,10 @@
       "id": "gravity-flip",
       "type": "gravity-zone",
       "params": {
-        "active": true
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 128
       }
     }
   ]

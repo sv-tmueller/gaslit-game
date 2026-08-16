@@ -2,8 +2,14 @@
   "name": "demo-widening-gap",
   "cols": 20,
   "rows": 12,
-  "spawn": { "col": 2, "row": 9 },
-  "exit": { "col": 17, "row": 9 },
+  "spawn": {
+    "col": 2,
+    "row": 9
+  },
+  "exit": {
+    "col": 17,
+    "row": 9
+  },
   "tiles": [
     "11111111111111111111",
     "10000000000000000001",
@@ -18,13 +24,5 @@
     "11111111100111111111",
     "11111111111111111111"
   ],
-  "traps": [],
-  "mutations": [
-    {
-      "attempt": 2,
-      "deltas": [
-        { "kind": "resize-gap", "fromCol": 9, "toCol": 12, "gapRow": 10, "gapTile": 0 }
-      ]
-    }
-  ]
+  "traps": []
 }

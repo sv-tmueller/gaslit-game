@@ -2,8 +2,14 @@
   "name": "finale",
   "cols": 20,
   "rows": 24,
-  "spawn": { "col": 2, "row": 21 },
-  "exit": { "col": 10, "row": 1 },
+  "spawn": {
+    "col": 2,
+    "row": 21
+  },
+  "exit": {
+    "col": 10,
+    "row": 1
+  },
   "tiles": [
     "11111111111111111111",
     "10000000000000000001",
@@ -37,8 +43,14 @@
       "trigger": "on-land",
       "params": {
         "tiles": [
-          { "col": 7, "row": 10 },
-          { "col": 8, "row": 10 }
+          {
+            "col": 7,
+            "row": 10
+          },
+          {
+            "col": 8,
+            "row": 10
+          }
         ],
         "delaySteps": 5,
         "returns": false
@@ -50,8 +62,14 @@
       "trigger": "on-land",
       "params": {
         "tiles": [
-          { "col": 11, "row": 10 },
-          { "col": 12, "row": 10 }
+          {
+            "col": 11,
+            "row": 10
+          },
+          {
+            "col": 12,
+            "row": 10
+          }
         ],
         "delaySteps": 5,
         "returns": false
@@ -80,17 +98,6 @@
         "triggerDist": 48,
         "speed": 2
       }
-    }
-  ],
-  "mutations": [
-    {
-      "attempt": 3,
-      "deltas": [
-        { "kind": "set-tile", "col": 10, "row": 5, "tile": 1 },
-        { "kind": "set-tile", "col": 10, "row": 6, "tile": 1 },
-        { "kind": "set-tile", "col": 10, "row": 7, "tile": 1 },
-        { "kind": "set-tile", "col": 10, "row": 8, "tile": 1 }
-      ]
     }
   ]
 }
