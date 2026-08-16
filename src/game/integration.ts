@@ -4,7 +4,7 @@ import type { Body } from '../engine/physics';
 import type { LoadedAtlas } from '../render/atlas-loader';
 import type { BlitContext } from '../render/batcher';
 import { computeCamera } from '../render/camera';
-import { renderFrame, type EntitySnapshot } from '../render/renderer';
+import { renderFrame, type EntitySnapshot, type RenderWorld } from '../render/renderer';
 import {
   createAnimTrack,
   currentFrame,
@@ -128,9 +128,28 @@ export function renderGame(state: GameState, ctx: BlitContext, alpha: number): v
     flipX,
   };
 
+  // Build the RenderWorld from the trap runtime's mutable world state,
+  // concatenating mechanic-published solids/hazards that persist during
+  // rendering (cleared at the START of the next stepMechanics call).
+  const scene = state.scene;
+  const world: RenderWorld = {
+    cols: scene.runtime.world.cols,
+    rows: scene.runtime.world.rows,
+    tiles: scene.runtime.world.tiles,
+    exit: scene.runtime.world.exitPos,
+    hazards: [
+      ...scene.runtime.world.hazards,
+      ...scene.mechanicsRuntime.publishedHazards,
+    ],
+    dynamicSolids: [
+      ...scene.runtime.world.dynamicSolids,
+      ...scene.mechanicsRuntime.publishedSolids,
+    ],
+  };
+
   renderFrame(ctx, {
     atlas: state.atlas,
-    level,
+    world,
     camera,
     entities: [currEntity],
     prevEntities: [prevEntity],

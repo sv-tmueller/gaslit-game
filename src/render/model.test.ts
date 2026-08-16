@@ -7,33 +7,45 @@ import {
   buildTileLayer,
   interpolate,
   type EntitySnapshot,
+  type RenderWorld,
 } from './model';
-import { Tile, type LevelData } from '../levels/types';
 import type { AtlasManifest } from './atlas';
 import type { Vec2 } from '../engine/physics';
+import type { TilePosition } from '../levels/types';
+import type { HazardRect } from '../engine/levelAdapter';
+import type { DynamicSolid } from '../traps/types';
 
 const MANIFEST = atlasManifest as unknown as AtlasManifest;
 const BITMAP: BitmapLike = { width: 128, height: 40 };
 const ATLAS = loadAtlas(MANIFEST, BITMAP);
 
-function makeLevel(
+/**
+ * Builds a RenderWorld from string rows (chars = tile values) plus optional
+ * hazards, dynamic solids, and exit position. Mirrors the old makeLevel
+ * helper but produces a RenderWorld suitable for the new buildTileLayer /
+ * buildRenderModel signatures.
+ */
+function makeWorld(
   rows: string[],
-  opts?: Partial<LevelData>,
-): LevelData {
-  const tiles: Tile[] = [];
+  opts?: {
+    exit?: TilePosition;
+    hazards?: HazardRect[];
+    dynamicSolids?: DynamicSolid[];
+  },
+): RenderWorld {
+  const tiles: number[] = [];
   for (const row of rows) {
     for (const ch of row) {
-      tiles.push(Number(ch) as Tile);
+      tiles.push(Number(ch));
     }
   }
   return {
-    name: opts?.name ?? 'test',
     cols: rows[0]!.length,
     rows: rows.length,
-    spawn: opts?.spawn ?? { col: 0, row: 0 },
-    exit: opts?.exit ?? { col: 0, row: 0 },
     tiles,
-    traps: [],
+    exit: opts?.exit ?? { col: 0, row: 0 },
+    hazards: opts?.hazards ?? [],
+    dynamicSolids: opts?.dynamicSolids ?? [],
   };
 }
 
@@ -56,14 +68,15 @@ describe('interpolate', () => {
 });
 
 describe('buildTileLayer', () => {
-  it('maps Tile.Solid top-row to tile.solid.top and below-top to tile.solid.fill', () => {
+  it('maps Solid top-row to tile.solid.top and below-top to tile.solid.fill', () => {
     // Row 0 is ceiling solids, row 1 is below-ceiling solids.
-    const level = makeLevel([
+    // Exit placed off-screen so it doesn't interfere with tile assertions.
+    const world = makeWorld([
       '11',
       '11',
-    ]);
+    ], { exit: { col: 100, row: 100 } });
 
-    const { sprites } = buildTileLayer(level, { x: 0, y: 0 });
+    const { sprites } = buildTileLayer(world, { x: 0, y: 0 });
 
     // Col 0, row 0: above is out-of-bounds (Empty) -> tile.solid.top
     // Col 0, row 1: above is Solid -> tile.solid.fill
@@ -82,30 +95,23 @@ describe('buildTileLayer', () => {
     expect(fillSprite!.frame).toBe('tile.solid.fill');
   });
 
-  it('maps Tile.OneWay to tile.oneway', () => {
-    const level = makeLevel(['2']);
-    const { sprites } = buildTileLayer(level, { x: 0, y: 0 });
+  it('maps OneWay to tile.oneway', () => {
+    const world = makeWorld(['2'], { exit: { col: 100, row: 100 } });
+    const { sprites } = buildTileLayer(world, { x: 0, y: 0 });
     expect(sprites).toHaveLength(1);
     expect(sprites[0]!.frame).toBe('tile.oneway');
   });
 
-  it('maps Tile.Hazard to hazard.spikes', () => {
-    const level = makeLevel(['3']);
-    const { sprites } = buildTileLayer(level, { x: 0, y: 0 });
-    expect(sprites).toHaveLength(1);
-    expect(sprites[0]!.frame).toBe('hazard.spikes');
-  });
-
-  it('skips Tile.Empty cells', () => {
-    const level = makeLevel(['0', '0']);
-    const { sprites } = buildTileLayer(level, { x: 0, y: 0 });
+  it('skips Empty cells', () => {
+    const world = makeWorld(['0', '0'], { exit: { col: 100, row: 100 } });
+    const { sprites } = buildTileLayer(world, { x: 0, y: 0 });
     expect(sprites).toHaveLength(0);
   });
 
   it('computes screen coords relative to camera', () => {
     // Three-column level; camera at (16,0) so col 1 onward is visible.
-    const level = makeLevel(['111']);
-    const { sprites } = buildTileLayer(level, { x: 16, y: 0 });
+    const world = makeWorld(['111'], { exit: { col: 100, row: 100 } });
+    const { sprites } = buildTileLayer(world, { x: 16, y: 0 });
     // Visible range: startCol=floor(16/16)=1, so col 1 is the first visible.
     // Col 1, row 0: world (16,0), camera at (16,0), screen (0,0).
     expect(sprites).toHaveLength(2);
@@ -114,11 +120,147 @@ describe('buildTileLayer', () => {
     expect(sprites[1]!.dstX).toBe(16);
   });
 
-  it('does not mutate the level data', () => {
-    const level = makeLevel(['11', '11']);
-    const tilesBefore = [...level.tiles];
-    buildTileLayer(level, { x: 0, y: 0 });
-    expect(level.tiles).toEqual(tilesBefore);
+  it('does not mutate the world tiles', () => {
+    const world = makeWorld(['11', '11'], { exit: { col: 100, row: 100 } });
+    const tilesBefore = [...world.tiles];
+    buildTileLayer(world, { x: 0, y: 0 });
+    expect(world.tiles).toEqual(tilesBefore);
+  });
+
+  // --- New tests for exit door, hazards, dynamic solids ---
+
+  it('emits exit.door sprite at the exit tile position', () => {
+    const world = makeWorld(['00', '00'], {
+      exit: { col: 1, row: 1 },
+    });
+    const { sprites } = buildTileLayer(world, { x: 0, y: 0 });
+
+    const exitSprite = sprites.find((s) => s.frame === 'exit.door');
+    expect(exitSprite).toBeDefined();
+    expect(exitSprite!.dstX).toBe(16); // 1 * 16 - 0
+    expect(exitSprite!.dstY).toBe(16); // 1 * 16 - 0
+    expect(exitSprite!.flipX).toBe(false);
+  });
+
+  it('culls exit door when off-screen', () => {
+    // Exit at col 30 (480px) — way outside the 320-wide viewport with camera at 0.
+    const world = makeWorld(['00'], {
+      exit: { col: 30, row: 0 },
+    });
+    const { sprites } = buildTileLayer(world, { x: 0, y: 0 });
+    const exitSprite = sprites.find((s) => s.frame === 'exit.door');
+    expect(exitSprite).toBeUndefined();
+  });
+
+  it('renders hazards from world.hazards as hazard.spikes sprites', () => {
+    const world = makeWorld(['00', '00'], {
+      hazards: [{ x: 16, y: 16, width: 16, height: 16 }],
+    });
+    const { sprites } = buildTileLayer(world, { x: 0, y: 0 });
+
+    const hazardSprites = sprites.filter((s) => s.frame === 'hazard.spikes');
+    expect(hazardSprites).toHaveLength(1);
+    expect(hazardSprites[0]!.dstX).toBe(16);
+    expect(hazardSprites[0]!.dstY).toBe(16);
+  });
+
+  it('tiles hazard.spikes for larger hazard rects', () => {
+    // 32x16 hazard should produce 2 hazard.spikes sprites
+    const world = makeWorld(['000', '000'], {
+      hazards: [{ x: 0, y: 0, width: 32, height: 16 }],
+    });
+    const { sprites } = buildTileLayer(world, { x: 0, y: 0 });
+
+    const hazardSprites = sprites.filter((s) => s.frame === 'hazard.spikes');
+    expect(hazardSprites).toHaveLength(2);
+    expect(hazardSprites[0]!.dstX).toBe(0);
+    expect(hazardSprites[1]!.dstX).toBe(16);
+  });
+
+  it('culls off-screen hazards', () => {
+    // Hazard at x=400 — outside the 320-wide viewport with camera at 0.
+    const world = makeWorld(['00'], {
+      hazards: [{ x: 400, y: 0, width: 16, height: 16 }],
+    });
+    const { sprites } = buildTileLayer(world, { x: 0, y: 0 });
+    const hazardSprites = sprites.filter((s) => s.frame === 'hazard.spikes');
+    expect(hazardSprites).toHaveLength(0);
+  });
+
+  it('renders non-lethal dynamic solids as FillRect with edge color', () => {
+    const ds: DynamicSolid = {
+      id: 'ds1',
+      x: 32,
+      y: 32,
+      width: 16,
+      height: 16,
+      velocityX: 0,
+      velocityY: 0,
+      solid: true,
+      lethal: false,
+    };
+    const world = makeWorld(['00', '00'], { dynamicSolids: [ds] });
+    const { rects } = buildTileLayer(world, { x: 0, y: 0 });
+
+    expect(rects).toHaveLength(1);
+    expect(rects[0]!.color).toBe('edge');
+    expect(rects[0]!.x).toBe(32);
+    expect(rects[0]!.y).toBe(32);
+    expect(rects[0]!.w).toBe(16);
+    expect(rects[0]!.h).toBe(16);
+  });
+
+  it('renders lethal dynamic solids as FillRect with lethal color', () => {
+    const ds: DynamicSolid = {
+      id: 'ds1',
+      x: 0,
+      y: 0,
+      width: 16,
+      height: 16,
+      velocityX: 0,
+      velocityY: 0,
+      solid: true,
+      lethal: true,
+    };
+    const world = makeWorld(['00', '00'], { dynamicSolids: [ds] });
+    const { rects } = buildTileLayer(world, { x: 0, y: 0 });
+
+    expect(rects).toHaveLength(1);
+    expect(rects[0]!.color).toBe('lethal');
+  });
+
+  it('skips non-solid dynamic solids', () => {
+    const ds: DynamicSolid = {
+      id: 'ds1',
+      x: 0,
+      y: 0,
+      width: 16,
+      height: 16,
+      velocityX: 0,
+      velocityY: 0,
+      solid: false,
+      lethal: false,
+    };
+    const world = makeWorld(['00', '00'], { dynamicSolids: [ds] });
+    const { rects } = buildTileLayer(world, { x: 0, y: 0 });
+    expect(rects).toHaveLength(0);
+  });
+
+  it('culls off-screen dynamic solids', () => {
+    const ds: DynamicSolid = {
+      id: 'ds1',
+      x: 400,
+      y: 0,
+      width: 16,
+      height: 16,
+      velocityX: 0,
+      velocityY: 0,
+      solid: true,
+      lethal: false,
+    };
+    const world = makeWorld(['00', '00'], { dynamicSolids: [ds] });
+    const { rects } = buildTileLayer(world, { x: 0, y: 0 });
+    expect(rects).toHaveLength(0);
   });
 });
 
@@ -195,9 +337,9 @@ describe('buildEntitySprites', () => {
 
 describe('buildRenderModel', () => {
   it('produces layers in fixed order: world, entities, effects', () => {
-    const level = makeLevel(['1']);
+    const world = makeWorld(['1'], { exit: { col: 100, row: 100 } });
     const model = buildRenderModel(
-      level,
+      world,
       { x: 0, y: 0 },
       [],
       [],
@@ -212,9 +354,9 @@ describe('buildRenderModel', () => {
   });
 
   it('clears with void palette token', () => {
-    const level = makeLevel(['0']);
+    const world = makeWorld(['0'], { exit: { col: 100, row: 100 } });
     const model = buildRenderModel(
-      level,
+      world,
       { x: 0, y: 0 },
       [],
       [],
@@ -225,9 +367,9 @@ describe('buildRenderModel', () => {
   });
 
   it('populates world layer sprites from tiles', () => {
-    const level = makeLevel(['1']);
+    const world = makeWorld(['1'], { exit: { col: 100, row: 100 } });
     const model = buildRenderModel(
-      level,
+      world,
       { x: 0, y: 0 },
       [],
       [],
@@ -238,14 +380,14 @@ describe('buildRenderModel', () => {
   });
 
   it('populates entity layer sprites from entities', () => {
-    const level = makeLevel(['0']);
+    const world = makeWorld(['0'], { exit: { col: 100, row: 100 } });
     const snap: EntitySnapshot = {
       body: { x: 0, y: 0, width: 16, height: 24 },
       frame: 'player.idle.0',
       flipX: false,
     };
     const model = buildRenderModel(
-      level,
+      world,
       { x: 0, y: 0 },
       [snap],
       [snap],
@@ -256,9 +398,9 @@ describe('buildRenderModel', () => {
   });
 
   it('effects layer is always empty for now', () => {
-    const level = makeLevel(['1']);
+    const world = makeWorld(['1'], { exit: { col: 100, row: 100 } });
     const model = buildRenderModel(
-      level,
+      world,
       { x: 0, y: 0 },
       [],
       [],
@@ -267,5 +409,22 @@ describe('buildRenderModel', () => {
     );
     expect(model.layers[2]!.sprites).toHaveLength(0);
     expect(model.layers[2]!.rects).toHaveLength(0);
+  });
+
+  it('passes dynamic solid rects through to world layer', () => {
+    const ds: DynamicSolid = {
+      id: 'ds1',
+      x: 0,
+      y: 0,
+      width: 16,
+      height: 16,
+      velocityX: 0,
+      velocityY: 0,
+      solid: true,
+      lethal: false,
+    };
+    const world = makeWorld(['00', '00'], { dynamicSolids: [ds] });
+    const model = buildRenderModel(world, { x: 0, y: 0 }, [], [], 0, ATLAS);
+    expect(model.layers[0]!.rects).toHaveLength(1);
   });
 });
