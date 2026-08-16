@@ -22,6 +22,17 @@ export interface TrapEntry {
   readonly params: Readonly<Record<string, JsonValue>>;
 }
 
+/**
+ * Declares a mechanic (spring, teleporter, moving platform, etc.) in a level.
+ * Unlike traps, mechanics are continuous—they have no trigger and step every
+ * frame. Mirrors {@link TrapEntry} minus the `trigger` field.
+ */
+export interface MechanicEntry {
+  readonly id: string;
+  readonly type: string;
+  readonly params: Readonly<Record<string, JsonValue>>;
+}
+
 export interface LevelData {
   readonly name: string;
   readonly cols: number;
@@ -31,6 +42,11 @@ export interface LevelData {
   /** Flat, row-major, length cols * rows. Index as row * cols + col. */
   readonly tiles: readonly Tile[];
   readonly traps: readonly TrapEntry[];
+  /**
+   * Optional mechanics declarations. Levels written before this field existed
+   * omit it entirely and behave identically (parsed as `[]`).
+   */
+  readonly mechanics?: readonly MechanicEntry[];
 }
 
 export type LevelErrorCode =
@@ -44,7 +60,9 @@ export type LevelErrorCode =
   | 'bad-tile-layer'
   | 'unknown-tile'
   | 'malformed-trap'
-  | 'duplicate-trap-id';
+  | 'duplicate-trap-id'
+  | 'malformed-mechanic'
+  | 'duplicate-mechanic-id';
 
 export interface LevelError {
   readonly code: LevelErrorCode;
