@@ -17,7 +17,7 @@
     "10000000000000000001",
     "10000000000000000001",
     "10000000000000000001",
-    "10002200001000220001",
+    "10002200001000220201",
     "10000000001000000001",
     "10000000001000000001",
     "10000000001000000001",
@@ -34,6 +34,32 @@
         "escapeRow": 1,
         "triggerDist": 48,
         "speed": 2
+      }
+    }
+  ],
+  "mechanics": [
+    {
+      "id": "tp-glitch-a",
+      "type": "teleporter",
+      "params": {
+        "x": 80,
+        "y": 144,
+        "destX": 240,
+        "destY": 80,
+        "oneWay": false,
+        "preserveMomentum": false
+      }
+    },
+    {
+      "id": "tp-glitch-b",
+      "type": "teleporter",
+      "params": {
+        "x": 240,
+        "y": 80,
+        "destX": 80,
+        "destY": 144,
+        "oneWay": false,
+        "preserveMomentum": false
       }
     }
   ]

@@ -16,7 +16,7 @@
     "10000000000000000001",
     "10000000000000000001",
     "10000000000000000001",
-    "10000010000001000001",
+    "10000010000001000201",
     "10000010000001000001",
     "10000010220221000001",
     "10000010000001000001",
@@ -48,6 +48,56 @@
         "direction": "left",
         "distance": 32,
         "speed": 2
+      }
+    }
+  ],
+  "mechanics": [
+    {
+      "id": "tp-maze-a",
+      "type": "teleporter",
+      "params": {
+        "x": 80,
+        "y": 144,
+        "destX": 128,
+        "destY": 96,
+        "oneWay": false,
+        "preserveMomentum": false
+      }
+    },
+    {
+      "id": "tp-maze-b",
+      "type": "teleporter",
+      "params": {
+        "x": 128,
+        "y": 96,
+        "destX": 80,
+        "destY": 144,
+        "oneWay": false,
+        "preserveMomentum": false
+      }
+    },
+    {
+      "id": "tp-maze-c",
+      "type": "teleporter",
+      "params": {
+        "x": 192,
+        "y": 96,
+        "destX": 272,
+        "destY": 64,
+        "oneWay": false,
+        "preserveMomentum": false
+      }
+    },
+    {
+      "id": "tp-maze-d",
+      "type": "teleporter",
+      "params": {
+        "x": 272,
+        "y": 64,
+        "destX": 192,
+        "destY": 96,
+        "oneWay": false,
+        "preserveMomentum": false
       }
     }
   ]
