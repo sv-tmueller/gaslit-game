@@ -13,16 +13,16 @@
   "tiles": [
     "11111111111111111111",
     "10000000000000000001",
+    "10200000000000000201",
+    "10002000000000011001",
     "10000000000000000001",
-    "10000000000000011001",
-    "10000000000000000001",
-    "10000110000000110001",
+    "10000110002000110001",
     "10000000000000000001",
     "10001111001100110001",
     "10000000000000000001",
+    "10000000020000000001",
     "10000000000000000001",
-    "10000000000000000001",
-    "10000000011100000001",
+    "10000002011100000001",
     "10000000000000000001",
     "10002200000000220001",
     "10000000000000000001",
@@ -113,6 +113,67 @@
         "retractSteps": 10,
         "repeats": true,
         "distance": 48
+      }
+    }
+  ],
+  "mechanics": [
+    {
+      "id": "finale-tp-a",
+      "type": "teleporter",
+      "params": {
+        "x": 160,
+        "y": 336,
+        "destX": 112,
+        "destY": 256,
+        "oneWay": false,
+        "preserveMomentum": false
+      }
+    },
+    {
+      "id": "finale-tp-b",
+      "type": "teleporter",
+      "params": {
+        "x": 112,
+        "y": 256,
+        "destX": 160,
+        "destY": 336,
+        "oneWay": false,
+        "preserveMomentum": false
+      }
+    },
+    {
+      "id": "finale-platform-left",
+      "type": "moving-platform",
+      "params": {
+        "startX": 112,
+        "startY": 256,
+        "width": 16,
+        "height": 16,
+        "dx": -48,
+        "dy": -64,
+        "speed": 60,
+        "distance": 80
+      }
+    },
+    {
+      "id": "finale-platform-right",
+      "type": "moving-platform",
+      "params": {
+        "startX": 208,
+        "startY": 256,
+        "width": 16,
+        "height": 16,
+        "dx": -128,
+        "dy": -64,
+        "speed": 60,
+        "distance": 143
+      }
+    },
+    {
+      "id": "finale-inversion",
+      "type": "control-inversion",
+      "params": {
+        "duration": -1
       }
     }
   ],
