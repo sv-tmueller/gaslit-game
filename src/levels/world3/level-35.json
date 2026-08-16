@@ -41,5 +41,21 @@
         "returnDelaySteps": 20
       }
     }
+  ],
+  "mechanics": [
+    {
+      "id": "sync-platform",
+      "type": "moving-platform",
+      "params": {
+        "startX": 96,
+        "startY": 144,
+        "width": 16,
+        "height": 16,
+        "dx": 1,
+        "dy": 0,
+        "speed": 60,
+        "distance": 112
+      }
+    }
   ]
 }
