@@ -67,6 +67,7 @@ describe('renderFrame', () => {
       camera,
       entities: [],
       prevEntities: [],
+      levelIndex: 0,
     };
 
     renderFrame(ctx, rc, 0);
@@ -88,6 +89,7 @@ describe('renderFrame', () => {
       camera: { x: 0, y: 0 },
       entities: [],
       prevEntities: [],
+      levelIndex: 0,
     };
 
     renderFrame(ctx, rc, 0);
@@ -118,6 +120,7 @@ describe('renderFrame', () => {
       camera,
       entities: [currEnt],
       prevEntities: [prevEnt],
+      levelIndex: 0,
     };
 
     renderFrame(ctx, rc, 0.5);
@@ -159,6 +162,7 @@ describe('renderFrame', () => {
       camera,
       entities,
       prevEntities,
+      levelIndex: 0,
     };
 
     // Deep freeze-ish: record originals.

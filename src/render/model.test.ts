@@ -3,9 +3,11 @@ import atlasManifest from '../../assets/atlas.json';
 import { loadAtlas, type BitmapLike } from './atlas-loader';
 import {
   buildEntitySprites,
+  buildHudLayer,
   buildRenderModel,
   buildTileLayer,
   interpolate,
+  type DrawText,
   type EntitySnapshot,
   type RenderWorld,
 } from './model';
@@ -345,9 +347,10 @@ describe('buildRenderModel', () => {
       [],
       0,
       ATLAS,
+      0,
     );
 
-    expect(model.layers).toHaveLength(3);
+    expect(model.layers).toHaveLength(4);
     expect(model.layers[0]!.kind).toBe('world');
     expect(model.layers[1]!.kind).toBe('entities');
     expect(model.layers[2]!.kind).toBe('effects');
@@ -362,6 +365,7 @@ describe('buildRenderModel', () => {
       [],
       0,
       ATLAS,
+      0,
     );
     expect(model.clear).toBe('void');
   });
@@ -375,6 +379,7 @@ describe('buildRenderModel', () => {
       [],
       0,
       ATLAS,
+      0,
     );
     expect(model.layers[0]!.sprites.length).toBeGreaterThan(0);
   });
@@ -393,6 +398,7 @@ describe('buildRenderModel', () => {
       [snap],
       0,
       ATLAS,
+      0,
     );
     expect(model.layers[1]!.sprites).toHaveLength(1);
   });
@@ -406,6 +412,7 @@ describe('buildRenderModel', () => {
       [],
       0,
       ATLAS,
+      0,
     );
     expect(model.layers[2]!.sprites).toHaveLength(0);
     expect(model.layers[2]!.rects).toHaveLength(0);
@@ -424,7 +431,74 @@ describe('buildRenderModel', () => {
       lethal: false,
     };
     const world = makeWorld(['00', '00'], { dynamicSolids: [ds] });
-    const model = buildRenderModel(world, { x: 0, y: 0 }, [], [], 0, ATLAS);
+    const model = buildRenderModel(world, { x: 0, y: 0 }, [], [], 0, ATLAS, 0);
     expect(model.layers[0]!.rects).toHaveLength(1);
+  });
+
+  it('includes hud layer as 4th layer with level text', () => {
+    const world = makeWorld(['0'], { exit: { col: 100, row: 100 } });
+    const model = buildRenderModel(
+      world,
+      { x: 0, y: 0 },
+      [],
+      [],
+      0,
+      ATLAS,
+      0,
+    );
+    expect(model.layers).toHaveLength(4);
+    expect(model.layers[3]!.kind).toBe('hud');
+    expect(model.layers[3]!.texts).toHaveLength(1);
+    expect(model.layers[3]!.texts[0]!.text).toBe('Level 1');
+  });
+
+  it('hud layer reflects levelIndex in text', () => {
+    const world = makeWorld(['0'], { exit: { col: 100, row: 100 } });
+    const model = buildRenderModel(
+      world,
+      { x: 0, y: 0 },
+      [],
+      [],
+      0,
+      ATLAS,
+      44,
+    );
+    expect(model.layers[3]!.texts[0]!.text).toBe('Level 45');
+  });
+
+  it('hud layer texts use bone color', () => {
+    const world = makeWorld(['0'], { exit: { col: 100, row: 100 } });
+    const model = buildRenderModel(
+      world,
+      { x: 0, y: 0 },
+      [],
+      [],
+      0,
+      ATLAS,
+      0,
+    );
+    expect(model.layers[3]!.texts[0]!.color).toBe('bone');
+  });
+});
+
+describe('buildHudLayer', () => {
+  it('produces "Level N" text at top-left for levelIndex 0', () => {
+    const texts = buildHudLayer(0);
+    expect(texts).toHaveLength(1);
+    expect(texts[0]!).toEqual({
+      text: 'Level 1',
+      x: 2,
+      y: 8,
+      color: 'bone',
+    } satisfies DrawText);
+  });
+
+  it('produces "Level 45" for levelIndex 44', () => {
+    const texts = buildHudLayer(44);
+    expect(texts).toHaveLength(1);
+    expect(texts[0]!.text).toBe('Level 45');
+    expect(texts[0]!.x).toBe(2);
+    expect(texts[0]!.y).toBe(8);
+    expect(texts[0]!.color).toBe('bone');
   });
 });

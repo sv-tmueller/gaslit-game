@@ -153,5 +153,6 @@ export function renderGame(state: GameState, ctx: BlitContext, alpha: number): v
     camera,
     entities: [currEntity],
     prevEntities: [prevEntity],
+    levelIndex: state.scene.sequence.index,
   }, alpha);
 }
