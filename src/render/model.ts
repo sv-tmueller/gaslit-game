@@ -160,9 +160,9 @@ export function buildTileLayer(
     const baseX = hz.x - camera.x;
     const baseY = hz.y - camera.y;
     // Iterate 16×16 cells covering the hazard rect.
-    const startX = Math.max(0, Math.ceil(-baseX / TILE_SIZE));
+    const startX = Math.max(0, Math.floor(-baseX / TILE_SIZE));
     const endX = Math.floor((VIEWPORT_W - 1 - baseX) / TILE_SIZE);
-    const startY = Math.max(0, Math.ceil(-baseY / TILE_SIZE));
+    const startY = Math.max(0, Math.floor(-baseY / TILE_SIZE));
     const endY = Math.floor((VIEWPORT_H - 1 - baseY) / TILE_SIZE);
 
     for (let ty = startY; ty <= endY; ty++) {
