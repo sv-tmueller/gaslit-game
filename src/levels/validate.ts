@@ -5,6 +5,7 @@ import {
   type LevelError,
   type LevelErrorCode,
   type LevelParseResult,
+  type MechanicEntry,
   type TilePosition,
   type TrapEntry,
 } from './types';
@@ -322,6 +323,104 @@ function validateTraps(
   return traps;
 }
 
+/**
+ * Validates the optional `mechanics` field. Mirrors {@link validateTraps}
+ * but the field is optional: a missing `mechanics` key yields `[]` (no error).
+ * Present-but-non-array, malformed entries, and duplicate ids are reported.
+ */
+function validateMechanics(
+  source: Record<string, unknown>,
+  errors: LevelError[],
+): readonly MechanicEntry[] | undefined {
+  const value = source['mechanics'];
+
+  // Optional: absence is not an error.
+  if (value === undefined) return [];
+
+  if (!Array.isArray(value)) {
+    errors.push(
+      error('malformed-mechanic', 'mechanics', `mechanics: expected an array, got ${describe(value)}`),
+    );
+    return undefined;
+  }
+
+  const mechanics: MechanicEntry[] = [];
+  const seenIds = new Set<string>();
+  let ok = true;
+
+  for (let i = 0; i < value.length; i += 1) {
+    const entry: unknown = value[i];
+    const path = `mechanics[${i}]`;
+
+    if (!isPlainObject(entry)) {
+      errors.push(
+        error('malformed-mechanic', path, `${path}: expected a plain object, got ${describe(entry)}`),
+      );
+      ok = false;
+      continue;
+    }
+
+    const id = entry['id'];
+    const type = entry['type'];
+    const params = entry['params'];
+    let entryOk = true;
+
+    if (typeof id !== 'string' || id.length === 0) {
+      errors.push(
+        error(
+          'malformed-mechanic',
+          `${path}.id`,
+          `${path}.id: expected a non-empty string, got ${describe(id)}`,
+        ),
+      );
+      entryOk = false;
+    } else if (seenIds.has(id)) {
+      errors.push(
+        error('duplicate-mechanic-id', `${path}.id`, `${path}.id: duplicate mechanic id ${describe(id)}`),
+      );
+      entryOk = false;
+    } else {
+      seenIds.add(id);
+    }
+    if (typeof type !== 'string' || type.length === 0) {
+      errors.push(
+        error(
+          'malformed-mechanic',
+          `${path}.type`,
+          `${path}.type: expected a non-empty string, got ${describe(type)}`,
+        ),
+      );
+      entryOk = false;
+    }
+    // params is optional on the wire; missing defaults to {} so authors are
+    // not forced to write `"params": {}` on mechanics that take none.
+    if (params !== undefined && !isPlainObject(params)) {
+      errors.push(
+        error(
+          'malformed-mechanic',
+          `${path}.params`,
+          `${path}.params: expected a plain object, got ${describe(params)}`,
+        ),
+      );
+      entryOk = false;
+    }
+
+    if (!entryOk) {
+      ok = false;
+      continue;
+    }
+
+    mechanics.push({
+      id: id as string,
+      type: type as string,
+      params: (params ?? {}) as Readonly<Record<string, JsonValue>>,
+    });
+  }
+
+  if (!ok) return undefined;
+  return mechanics;
+}
+
 export function parseLevel(source: unknown): LevelParseResult {
   const stage1 = validateStage1(source);
   if ('errors' in stage1) {
@@ -352,6 +451,7 @@ export function parseLevel(source: unknown): LevelParseResult {
   );
   const tiles = validateTiles(doc, cols, rows, errors);
   const traps = validateTraps(doc, errors);
+  const mechanics = validateMechanics(doc, errors);
 
   if (errors.length > 0) {
     return { ok: false, errors };
@@ -367,6 +467,7 @@ export function parseLevel(source: unknown): LevelParseResult {
       exit: exit as TilePosition,
       tiles: tiles as readonly Tile[],
       traps: traps as readonly TrapEntry[],
+      mechanics: mechanics as readonly MechanicEntry[],
     },
   };
 }
