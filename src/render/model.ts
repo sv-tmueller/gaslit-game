@@ -33,10 +33,18 @@ export interface FillRect {
   readonly color: PaletteToken;
 }
 
+export interface DrawText {
+  readonly text: string;
+  readonly x: number;
+  readonly y: number;
+  readonly color: PaletteToken;
+}
+
 export interface RenderLayer {
-  readonly kind: 'world' | 'entities' | 'effects';
+  readonly kind: 'world' | 'entities' | 'effects' | 'hud';
   readonly sprites: readonly DrawSprite[];
   readonly rects: readonly FillRect[];
+  readonly texts: readonly DrawText[];
 }
 
 export interface RenderModel {
@@ -265,8 +273,26 @@ export function buildEntitySprites(
 }
 
 /**
+ * Builds the HUD layer text elements for the given 0-based level index.
+ *
+ * Displays "Level N" (1-based) at top-left (x=2, y=8) using the 'bone'
+ * palette color. Bypasses computeHud (which deliberately lies ~12.5%
+ * of the time) — the issue wants truthful level identification.
+ */
+export function buildHudLayer(levelIndex: number): DrawText[] {
+  return [
+    {
+      text: `Level ${levelIndex + 1}`,
+      x: 2,
+      y: 8,
+      color: 'bone',
+    },
+  ];
+}
+
+/**
  * Composes the full render model: clear=void, layers=[world, entities,
- * effects] in FIXED order.
+ * effects, hud] in FIXED order.
  */
 export function buildRenderModel(
   world: RenderWorld,
@@ -275,6 +301,7 @@ export function buildRenderModel(
   prevEntities: readonly EntitySnapshot[],
   alpha: number,
   atlas: LoadedAtlas,
+  levelIndex: number,
 ): RenderModel {
   const worldLayer = buildTileLayer(world, camera);
   const entitySprites = buildEntitySprites(
@@ -284,13 +311,15 @@ export function buildRenderModel(
     camera,
     atlas,
   );
+  const hudTexts = buildHudLayer(levelIndex);
 
   return {
     clear: 'void',
     layers: [
-      { kind: 'world', sprites: worldLayer.sprites, rects: worldLayer.rects },
-      { kind: 'entities', sprites: entitySprites, rects: [] },
-      { kind: 'effects', sprites: [], rects: [] },
+      { kind: 'world', sprites: worldLayer.sprites, rects: worldLayer.rects, texts: [] },
+      { kind: 'entities', sprites: entitySprites, rects: [], texts: [] },
+      { kind: 'effects', sprites: [], rects: [], texts: [] },
+      { kind: 'hud', sprites: [], rects: [], texts: hudTexts },
     ],
   };
 }

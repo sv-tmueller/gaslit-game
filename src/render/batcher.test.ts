@@ -25,8 +25,10 @@ function createMockCtx(): BlitContext & {
   const proxy: BlitContext & { calls: RecordedCall[] } = {
     calls,
     fillStyle: '',
+    font: '',
     drawImage: (...args: unknown[]) => calls.push({ method: 'drawImage', args }),
     fillRect: (...args: unknown[]) => calls.push({ method: 'fillRect', args }),
+    fillText: (...args: unknown[]) => calls.push({ method: 'fillText', args }),
     save: () => calls.push({ method: 'save', args: [] }),
     restore: () => calls.push({ method: 'restore', args: [] }),
     translate: (...args: unknown[]) =>
@@ -46,12 +48,12 @@ describe('flushModel', () => {
     const ctx = createMockCtx();
     const model: RenderModel = {
       clear: 'void',
-      layers: [{ kind: 'world', sprites: [], rects: [] }],
+      layers: [{ kind: 'world', sprites: [], rects: [], texts: [] }],
     };
 
     flushModel(ctx, model, ATLAS);
 
-    // First meaningful call should be fillRect for the clear.
+    // First meaningful call should be a fillRect for the clear.
     const fillRects = findCalls(ctx, 'fillRect');
     expect(fillRects.length).toBeGreaterThanOrEqual(1);
     const clearCall = fillRects[0]!;
@@ -82,6 +84,7 @@ describe('flushModel', () => {
             },
           ],
           rects: [],
+          texts: [],
         },
       ],
     };
@@ -121,6 +124,7 @@ describe('flushModel', () => {
             },
           ],
           rects: [],
+          texts: [],
         },
       ],
     };
@@ -165,6 +169,7 @@ describe('flushModel', () => {
             },
           ],
           rects: [{ x: 0, y: 0, w: 320, h: 180, color: 'night' }],
+          texts: [],
         },
       ],
     };
@@ -195,6 +200,7 @@ describe('flushModel', () => {
             { frame: 'tile.solid.top', dstX: 0, dstY: 0, flipX: false },
           ],
           rects: [],
+          texts: [],
         },
         {
           kind: 'entities',
@@ -202,6 +208,7 @@ describe('flushModel', () => {
             { frame: 'player.idle.0', dstX: 0, dstY: 0, flipX: false },
           ],
           rects: [],
+          texts: [],
         },
         {
           kind: 'effects',
@@ -209,6 +216,7 @@ describe('flushModel', () => {
             { frame: 'hazard.spikes', dstX: 0, dstY: 0, flipX: false },
           ],
           rects: [],
+          texts: [],
         },
       ],
     };

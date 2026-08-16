@@ -25,8 +25,10 @@ function createMockCtx(): BlitContext & {
   const proxy: BlitContext & { calls: RecordedCall[] } = {
     calls,
     fillStyle: '',
+    font: '',
     drawImage: (...args: unknown[]) => calls.push({ method: 'drawImage', args }),
     fillRect: (...args: unknown[]) => calls.push({ method: 'fillRect', args }),
+    fillText: (...args: unknown[]) => calls.push({ method: 'fillText', args }),
     save: () => calls.push({ method: 'save', args: [] }),
     restore: () => calls.push({ method: 'restore', args: [] }),
     translate: (...args: unknown[]) =>
@@ -65,6 +67,7 @@ describe('renderFrame', () => {
       camera,
       entities: [],
       prevEntities: [],
+      levelIndex: 0,
     };
 
     renderFrame(ctx, rc, 0);
@@ -86,6 +89,7 @@ describe('renderFrame', () => {
       camera: { x: 0, y: 0 },
       entities: [],
       prevEntities: [],
+      levelIndex: 0,
     };
 
     renderFrame(ctx, rc, 0);
@@ -116,6 +120,7 @@ describe('renderFrame', () => {
       camera,
       entities: [currEnt],
       prevEntities: [prevEnt],
+      levelIndex: 0,
     };
 
     renderFrame(ctx, rc, 0.5);
@@ -157,6 +162,7 @@ describe('renderFrame', () => {
       camera,
       entities,
       prevEntities,
+      levelIndex: 0,
     };
 
     // Deep freeze-ish: record originals.

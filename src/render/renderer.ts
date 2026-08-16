@@ -15,6 +15,7 @@ export interface RenderContext {
   readonly camera: Camera;
   readonly entities: readonly EntitySnapshot[];
   readonly prevEntities: readonly EntitySnapshot[];
+  readonly levelIndex: number;
 }
 
 export function renderFrame(
@@ -29,6 +30,7 @@ export function renderFrame(
     rc.prevEntities,
     alpha,
     rc.atlas,
+    rc.levelIndex,
   );
   flushModel(ctx, model, rc.atlas);
 }

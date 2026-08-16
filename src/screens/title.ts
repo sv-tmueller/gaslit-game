@@ -76,9 +76,9 @@ export function buildTitleModel(state: TitleState): RenderModel {
   return {
     clear: 'void',
     layers: [
-      { kind: 'world', sprites, rects },
-      { kind: 'entities', sprites: [], rects: [] },
-      { kind: 'effects', sprites: [], rects: [] },
+      { kind: 'world', sprites, rects, texts: [] },
+      { kind: 'entities', sprites: [], rects: [], texts: [] },
+      { kind: 'effects', sprites: [], rects: [], texts: [] },
     ],
   };
 }

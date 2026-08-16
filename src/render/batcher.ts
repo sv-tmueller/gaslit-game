@@ -15,7 +15,9 @@ import { BASE_HEIGHT, BASE_WIDTH } from '../scale';
 /** Structural subset of CanvasRenderingContext2D used by the blitter. */
 export interface BlitContext {
   fillStyle: string;
+  font: string;
   fillRect(x: number, y: number, w: number, h: number): void;
+  fillText(text: string, x: number, y: number): void;
   drawImage(
     image: unknown,
     sx: number,
@@ -82,6 +84,13 @@ export function flushModel(
           frame.h,
         );
       }
+    }
+
+    // Flush text elements (HUD layer).
+    for (const txt of layer.texts) {
+      ctx.font = '8px monospace';
+      ctx.fillStyle = PALETTE[txt.color];
+      ctx.fillText(txt.text, txt.x, txt.y);
     }
   }
 }
