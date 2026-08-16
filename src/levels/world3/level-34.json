@@ -24,5 +24,21 @@
     "11110000000000001111",
     "11113333333333331111"
   ],
-  "traps": []
+  "traps": [],
+  "mechanics": [
+    {
+      "id": "wave-platform",
+      "type": "moving-platform",
+      "params": {
+        "startX": 112,
+        "startY": 144,
+        "width": 16,
+        "height": 16,
+        "dx": 1,
+        "dy": 0,
+        "speed": 60,
+        "distance": 80
+      }
+    }
+  ]
 }
