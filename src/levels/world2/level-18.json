@@ -38,5 +38,14 @@
         "repeats": true
       }
     }
+  ],
+  "mechanics": [
+    {
+      "id": "gravity-flip",
+      "type": "gravity-zone",
+      "params": {
+        "active": true
+      }
+    }
   ]
 }
