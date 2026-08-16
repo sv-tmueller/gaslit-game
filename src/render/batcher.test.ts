@@ -25,8 +25,10 @@ function createMockCtx(): BlitContext & {
   const proxy: BlitContext & { calls: RecordedCall[] } = {
     calls,
     fillStyle: '',
+    font: '',
     drawImage: (...args: unknown[]) => calls.push({ method: 'drawImage', args }),
     fillRect: (...args: unknown[]) => calls.push({ method: 'fillRect', args }),
+    fillText: (...args: unknown[]) => calls.push({ method: 'fillText', args }),
     save: () => calls.push({ method: 'save', args: [] }),
     restore: () => calls.push({ method: 'restore', args: [] }),
     translate: (...args: unknown[]) =>

@@ -15,7 +15,9 @@ import { BASE_HEIGHT, BASE_WIDTH } from '../scale';
 /** Structural subset of CanvasRenderingContext2D used by the blitter. */
 export interface BlitContext {
   fillStyle: string;
+  font: string;
   fillRect(x: number, y: number, w: number, h: number): void;
+  fillText(text: string, x: number, y: number): void;
   drawImage(
     image: unknown,
     sx: number,

@@ -104,7 +104,9 @@ function mockBlitContext(): BlitContext & { calls: { method: string; args: unkno
   return {
     calls,
     fillStyle: '',
+    font: '',
     fillRect: (...args: unknown[]) => calls.push({ method: 'fillRect', args }),
+    fillText: (...args: unknown[]) => calls.push({ method: 'fillText', args }),
     drawImage: (...args: unknown[]) => calls.push({ method: 'drawImage', args }),
     save: () => calls.push({ method: 'save', args: [] }),
     restore: () => calls.push({ method: 'restore', args: [] }),
