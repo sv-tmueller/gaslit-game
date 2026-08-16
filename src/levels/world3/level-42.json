@@ -19,7 +19,7 @@
     "10000001100001100001",
     "10000000000000000001",
     "10001100001100001001",
-    "10000000000000000001",
+    "10000000000000000201",
     "10000000000000000001",
     "11111131131131131111",
     "11111111111111111111"
@@ -51,6 +51,80 @@
         "retractSteps": 8,
         "repeats": true,
         "distance": 32
+      }
+    }
+  ],
+  "mechanics": [
+    {
+      "id": "perc-camera-zoom",
+      "type": "camera-troll",
+      "params": {
+        "kind": "zoom",
+        "intensity": 2,
+        "durationSteps": 90
+      }
+    },
+    {
+      "id": "perc-camera-flip",
+      "type": "camera-troll",
+      "params": {
+        "kind": "flip",
+        "intensity": 1,
+        "durationSteps": 60
+      }
+    },
+    {
+      "id": "perc-camera-offset",
+      "type": "camera-troll",
+      "params": {
+        "kind": "offset",
+        "intensity": 3,
+        "durationSteps": 75
+      }
+    },
+    {
+      "id": "perc-camera-lag",
+      "type": "camera-troll",
+      "params": {
+        "kind": "lag",
+        "intensity": 2,
+        "durationSteps": 120
+      }
+    },
+    {
+      "id": "perc-fake-crash",
+      "type": "fake-ui",
+      "params": {
+        "kind": "fake-crash",
+        "seed": 137,
+        "durationSteps": 100
+      }
+    },
+    {
+      "id": "perc-fake-pause",
+      "type": "fake-ui",
+      "params": {
+        "kind": "fake-pause",
+        "seed": 42,
+        "durationSteps": 80
+      }
+    },
+    {
+      "id": "perc-fake-settings",
+      "type": "fake-ui",
+      "params": {
+        "kind": "fake-settings",
+        "seed": 99,
+        "durationSteps": 90
+      }
+    },
+    {
+      "id": "perc-fake-loading",
+      "type": "fake-ui",
+      "params": {
+        "kind": "fake-loading",
+        "seed": 256,
+        "durationSteps": 110
       }
     }
   ]
